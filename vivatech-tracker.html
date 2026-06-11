@@ -8,55 +8,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --navy: #0d1b2a;
-    --navy2: #1a2e45;
-    --blue: #1565c0;
-    --blue-lt: #1976d2;
-    --accent: #e53935;
-    --gold: #f9a825;
-    --green: #2e7d32;
-    --green-lt: #e8f5e9;
-    --red-lt: #ffebee;
-    --grey: #90a4ae;
-    --grey-lt: #eceff1;
-    --grey-mid: #cfd8dc;
-    --white: #ffffff;
-    --text: #1a2e45;
-    --text-soft: #546e7a;
-    --surface: #f5f7fa;
-    --row-even: #ffffff;
-    --row-odd: #f8fafc;
+    --navy: #0d1b2a; --navy2: #1a2e45; --blue: #1565c0; --blue-lt: #1976d2;
+    --accent: #e53935; --gold: #f9a825; --green: #2e7d32; --green-lt: #e8f5e9;
+    --grey: #90a4ae; --grey-lt: #eceff1; --grey-mid: #cfd8dc; --white: #ffffff;
+    --text: #1a2e45; --text-soft: #546e7a; --surface: #f5f7fa;
     --shadow: 0 2px 8px rgba(13,27,42,0.10);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--surface); color: var(--text); font-size: 13px; }
 
-  /* HEADER */
   header {
-    background: var(--navy);
-    color: white;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: var(--navy); color: white; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
   .header-left { display: flex; align-items: center; gap: 16px; }
   .logo-mark {
-    width: 32px; height: 32px;
+    width: 32px; height: 32px; border-radius: 4px; flex-shrink: 0;
     background: linear-gradient(135deg, #002395 33%, #ffffff 33%, #ffffff 66%, #ed2939 66%);
-    border-radius: 4px;
-    flex-shrink: 0;
   }
-  header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
+  header h1 { font-size: 15px; font-weight: 600; }
   header h1 span { color: var(--gold); font-weight: 400; font-size: 12px; margin-left: 8px; opacity: 0.9; }
   .header-actions { display: flex; gap: 8px; align-items: center; }
-
-  /* BUTTONS */
   .btn {
     padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer;
     font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
@@ -68,25 +42,20 @@
   .btn-outline:hover { background: rgba(255,255,255,0.1); }
   .btn-success { background: var(--green); color: white; }
   .btn-success:hover { background: #1b5e20; }
-  .btn-sm { padding: 4px 10px; font-size: 11px; }
 
-  /* UPLOAD ZONE */
   #upload-zone {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: calc(100vh - 56px);
-    gap: 24px;
+    min-height: calc(100vh - 56px); gap: 24px;
   }
   .upload-card {
     background: white; border-radius: 16px; padding: 56px 64px;
     box-shadow: var(--shadow); text-align: center; max-width: 480px;
-    border: 2px dashed var(--grey-mid);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    border: 2px dashed var(--grey-mid); transition: border-color 0.2s, box-shadow 0.2s;
   }
   .upload-card.dragover { border-color: var(--blue-lt); box-shadow: 0 0 0 4px rgba(21,101,192,0.1); }
   .upload-icon { font-size: 48px; margin-bottom: 16px; }
   .upload-card h2 { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
   .upload-card p { color: var(--text-soft); line-height: 1.6; margin-bottom: 24px; }
-  .upload-card input[type=file] { display: none; }
   .upload-label {
     display: inline-flex; align-items: center; gap: 8px;
     background: var(--blue-lt); color: white; padding: 12px 24px;
@@ -96,21 +65,11 @@
   .upload-label:hover { background: var(--blue); }
   .upload-hint { color: var(--grey); font-size: 11px; margin-top: 12px; }
 
-  /* MAIN APP */
   #app { display: none; }
 
-  /* TOOLBAR */
-  .toolbar {
-    background: white; border-bottom: 1px solid var(--grey-mid);
-    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .toolbar-section { display: flex; align-items: center; gap: 8px; }
-  .toolbar-sep { width: 1px; height: 24px; background: var(--grey-mid); }
-
-  /* STATS BAR */
   .stats-bar {
     display: flex; gap: 16px; padding: 10px 20px;
-    background: var(--navy2); color: white; flex-wrap: wrap;
+    background: var(--navy2); color: white; flex-wrap: wrap; align-items: center;
   }
   .stat-item { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
   .stat-num { font-size: 20px; font-weight: 700; line-height: 1; }
@@ -118,19 +77,17 @@
   .stat-item.present .stat-num { color: #81c784; }
   .stat-item.absent .stat-num { color: #ef9a9a; }
   .stat-item.unknown .stat-num { color: #fff59d; }
-
-  /* PROGRESS BAR */
-  .presence-bar {
-    flex: 1; min-width: 200px;
-    display: flex; flex-direction: column; gap: 4px; justify-content: center;
-  }
+  .presence-bar { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
   .presence-bar-label { font-size: 10px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
   .presence-bar-track { height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; display: flex; }
   .bar-present { background: #81c784; transition: width 0.4s; }
   .bar-absent { background: #ef9a9a; transition: width 0.4s; }
-  .bar-unknown { background: rgba(255,255,255,0.25); flex: 1; }
 
-  /* FILTERS */
+  .toolbar {
+    background: white; border-bottom: 1px solid var(--grey-mid);
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .toolbar-sep { width: 1px; height: 24px; background: var(--grey-mid); }
   .filter-tabs { display: flex; gap: 2px; }
   .filter-tab {
     padding: 6px 14px; border-radius: 6px; border: 1px solid var(--grey-mid);
@@ -139,77 +96,64 @@
   }
   .filter-tab.active { background: var(--navy); color: white; border-color: var(--navy); }
   .filter-tab:hover:not(.active) { background: var(--grey-lt); }
-
   input[type=search], select {
     padding: 7px 12px; border-radius: 6px; border: 1px solid var(--grey-mid);
     font-size: 12px; color: var(--text); background: white; outline: none;
-    transition: border-color 0.15s;
   }
   input[type=search]:focus, select:focus { border-color: var(--blue-lt); }
   input[type=search] { width: 220px; }
 
-  /* TABLE */
-  .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 220px); }
+  .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 230px); }
   table { width: 100%; border-collapse: collapse; }
   thead th {
-    position: sticky; top: 0; z-index: 10;
-    background: var(--navy); color: white;
-    padding: 10px 12px; text-align: left;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-    white-space: nowrap;
+    position: sticky; top: 0; z-index: 10; background: var(--navy); color: white;
+    padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
     cursor: pointer; user-select: none;
   }
   thead th:hover { background: var(--navy2); }
-  thead th .sort-icon { opacity: 0.4; margin-left: 4px; }
-  thead th.sorted .sort-icon { opacity: 1; }
-
   tbody tr { border-bottom: 1px solid var(--grey-mid); transition: background 0.1s; }
-  tbody tr:nth-child(even) { background: var(--row-odd); }
-  tbody tr:nth-child(odd) { background: var(--row-even); }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:nth-child(odd) { background: white; }
   tbody tr:hover { background: #e3f2fd !important; }
   tbody tr.present-row td:first-child { border-left: 3px solid var(--green); }
   tbody tr.absent-row td:first-child { border-left: 3px solid var(--accent); }
-
   tbody td { padding: 8px 12px; vertical-align: middle; }
 
   .day-badge {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.03em;
-    white-space: nowrap;
+    font-size: 10px; font-weight: 700; white-space: nowrap;
   }
   .day-wed { background: #e8f5e9; color: #2e7d32; }
   .day-thu { background: #e3f2fd; color: #1565c0; }
   .day-fri { background: #fff8e1; color: #f57f17; }
 
   .time-cell { font-weight: 600; font-size: 13px; color: var(--navy); white-space: nowrap; }
-  .location-cell { max-width: 220px; font-size: 11px; color: var(--text-soft); }
+  .location-cell { max-width: 200px; font-size: 11px; color: var(--text-soft); line-height: 1.4; }
   .person-name { font-weight: 600; color: var(--text); }
   .person-company { font-size: 11px; color: var(--text-soft); }
 
-  /* PRESENCE TOGGLE */
   .presence-toggle { display: flex; gap: 4px; align-items: center; justify-content: center; }
   .toggle-btn {
     width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--grey-mid);
-    background: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+    background: white; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
     transition: all 0.15s; flex-shrink: 0;
   }
   .toggle-btn:hover { transform: scale(1.15); }
   .toggle-btn.active-present { background: var(--green); border-color: var(--green); color: white; }
   .toggle-btn.active-absent { background: var(--accent); border-color: var(--accent); color: white; }
 
-  /* DIFF BADGE */
-  .diff-new { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-  .diff-removed { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; opacity: 0.6; }
-  .diff-badge {
-    display: inline-block; padding: 1px 6px; border-radius: 4px;
-    font-size: 10px; font-weight: 700; margin-left: 6px;
+  .note-input {
+    border: none; background: transparent; width: 100%; font-size: 12px;
+    color: var(--text-soft); outline: none; padding: 2px 4px; border-radius: 4px; font-family: inherit;
   }
+  .note-input:hover { background: var(--grey-lt); }
+  .note-input:focus { background: white; border: 1px solid var(--blue-lt); }
 
-  /* IMPORT MODAL */
   .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(13,27,42,0.7); z-index: 200;
-    align-items: center; justify-content: center;
+    display: none; position: fixed; inset: 0; background: rgba(13,27,42,0.7);
+    z-index: 200; align-items: center; justify-content: center;
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -219,173 +163,117 @@
   .modal h2 { font-size: 18px; margin-bottom: 8px; color: var(--navy); }
   .modal p { color: var(--text-soft); margin-bottom: 20px; line-height: 1.6; }
   .diff-summary { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-  .diff-line { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .diff-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
   .diff-line + .diff-line { border-top: 1px solid var(--grey-mid); }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-  .btn-danger { background: var(--accent); color: white; }
   .btn-cancel { background: var(--grey-lt); color: var(--text); }
 
-  /* LOADING */
   .loading-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(13,27,42,0.85); z-index: 300;
-    align-items: center; justify-content: center; flex-direction: column; gap: 16px;
-    color: white;
+    display: none; position: fixed; inset: 0; background: rgba(13,27,42,0.85);
+    z-index: 300; align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px; color: white;
   }
   .loading-overlay.show { display: flex; }
   .spinner {
     width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2);
-    border-top-color: white; border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 14px; opacity: 0.9; }
+  .loading-sub { font-size: 12px; opacity: 0.6; margin-top: -8px; }
 
-  /* EMPTY STATE */
   .empty-state { text-align: center; padding: 64px 32px; color: var(--text-soft); }
-  .empty-state p { margin-top: 8px; }
-
-  /* NOTES */
-  .note-input {
-    border: none; background: transparent; width: 100%; font-size: 12px;
-    color: var(--text-soft); outline: none; cursor: pointer;
-    padding: 2px 4px; border-radius: 4px;
-    font-family: inherit;
-  }
-  .note-input:hover { background: var(--grey-lt); }
-  .note-input:focus { background: white; border: 1px solid var(--blue-lt); cursor: text; }
-
-  @media (max-width: 768px) {
-    .toolbar { padding: 8px 12px; }
-    input[type=search] { width: 160px; }
-    thead th { padding: 8px; }
-    tbody td { padding: 6px 8px; }
-  }
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Analyse du PDF en cours…</div>
+  <div class="loading-text" id="loading-text">Analyse du PDF…</div>
+  <div class="loading-sub" id="loading-sub"></div>
 </div>
 
-<!-- IMPORT DIFF MODAL -->
 <div class="modal-overlay" id="diff-modal">
   <div class="modal">
-    <h2>Réimport détecté</h2>
-    <p>Voici les changements par rapport aux données actuelles. Les coches de présence existantes seront conservées.</p>
+    <h2>📋 Réimport détecté</h2>
+    <p>Voici les changements détectés. Les coches de présence existantes seront conservées.</p>
     <div class="diff-summary" id="diff-summary"></div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeDiffModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="applyImport()">Appliquer les changements</button>
+      <button class="btn btn-primary" onclick="applyImport()">✓ Appliquer</button>
     </div>
   </div>
 </div>
 
-<!-- HEADER -->
 <header>
   <div class="header-left">
     <div class="logo-mark"></div>
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer">
-      ⬆ Réimporter PDF
-    </label>
+    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer">⬆ Réimporter PDF</label>
     <input type="file" id="reimport-input" accept=".pdf" style="display:none" onchange="handleReimport(this)">
     <button class="btn btn-success" onclick="exportExcel()">⬇ Export Excel</button>
   </div>
 </header>
 
-<!-- UPLOAD ZONE -->
 <div id="upload-zone">
   <div class="upload-card" id="drop-zone">
     <div class="upload-icon">📋</div>
     <h2>Importer le planning Vivatech</h2>
-    <p>Glissez votre PDF de time schedules ou cliquez pour le sélectionner. Les données sont traitées localement dans votre navigateur.</p>
-    <label class="upload-label" for="pdf-input">
-      📄 Choisir un fichier PDF
-    </label>
-    <input type="file" id="pdf-input" accept=".pdf" onchange="handleFile(this)">
-    <p class="upload-hint">Format attendu : Time Schedules Business Meetings @ Vivatech</p>
+    <p>Glissez votre PDF de time schedules ou cliquez pour le sélectionner.</p>
+    <label class="upload-label" for="pdf-input">📄 Choisir un fichier PDF</label>
+    <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handleFile(this)">
+    <p class="upload-hint">Format : Time Schedules Business Meetings @ Vivatech</p>
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="app">
-  <!-- STATS BAR -->
   <div class="stats-bar">
-    <div class="stat-item">
-      <span class="stat-num" id="stat-total">0</span>
-      <span class="stat-label">Total RDV</span>
-    </div>
-    <div class="stat-item present">
-      <span class="stat-num" id="stat-present">0</span>
-      <span class="stat-label">Présents</span>
-    </div>
-    <div class="stat-item absent">
-      <span class="stat-num" id="stat-absent">0</span>
-      <span class="stat-label">Absents</span>
-    </div>
-    <div class="stat-item unknown">
-      <span class="stat-num" id="stat-unknown">0</span>
-      <span class="stat-label">Non renseigné</span>
-    </div>
+    <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total RDV</span></div>
+    <div class="stat-item present"><span class="stat-num" id="stat-present">0</span><span class="stat-label">Présents</span></div>
+    <div class="stat-item absent"><span class="stat-num" id="stat-absent">0</span><span class="stat-label">Absents</span></div>
+    <div class="stat-item unknown"><span class="stat-num" id="stat-unknown">0</span><span class="stat-label">Non renseigné</span></div>
     <div class="presence-bar">
       <span class="presence-bar-label">Taux de présence</span>
       <div class="presence-bar-track">
         <div class="bar-present" id="bar-present" style="width:0%"></div>
         <div class="bar-absent" id="bar-absent" style="width:0%"></div>
-        <div class="bar-unknown" id="bar-unknown"></div>
       </div>
     </div>
   </div>
 
-  <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="toolbar-section">
-      <div class="filter-tabs" id="day-tabs">
-        <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous les jours</button>
-        <button class="filter-tab" data-day="Mer" onclick="setDayFilter(this)">Mer 17/06</button>
-        <button class="filter-tab" data-day="Jeu" onclick="setDayFilter(this)">Jeu 18/06</button>
-        <button class="filter-tab" data-day="Ven" onclick="setDayFilter(this)">Ven 19/06</button>
-      </div>
+    <div class="filter-tabs" id="day-tabs">
+      <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous</button>
+      <button class="filter-tab" data-day="Mer" onclick="setDayFilter(this)">Mer 17/06</button>
+      <button class="filter-tab" data-day="Jeu" onclick="setDayFilter(this)">Jeu 18/06</button>
+      <button class="filter-tab" data-day="Ven" onclick="setDayFilter(this)">Ven 19/06</button>
     </div>
     <div class="toolbar-sep"></div>
-    <div class="toolbar-section">
-      <div class="filter-tabs">
-        <button class="filter-tab active" data-presence="all" onclick="setPresenceFilter(this)">Tous</button>
-        <button class="filter-tab" data-presence="present" onclick="setPresenceFilter(this)">✓ Présents</button>
-        <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Absents</button>
-        <button class="filter-tab" data-presence="unknown" onclick="setPresenceFilter(this)">? Non renseigné</button>
-      </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-presence="all" onclick="setPresenceFilter(this)">Tous</button>
+      <button class="filter-tab" data-presence="present" onclick="setPresenceFilter(this)">✓ Présents</button>
+      <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Absents</button>
+      <button class="filter-tab" data-presence="unknown" onclick="setPresenceFilter(this)">? Non renseigné</button>
     </div>
     <div class="toolbar-sep"></div>
-    <div class="toolbar-section">
-      <input type="search" id="search-input" placeholder="🔍 Rechercher nom, société, lieu…" oninput="applyFilters()">
-      <select id="time-filter" onchange="applyFilters()">
-        <option value="">Tous les horaires</option>
-      </select>
-    </div>
-    <div class="toolbar-section" style="margin-left:auto">
-      <span style="font-size:11px;color:var(--text-soft)" id="row-count">— lignes</span>
-    </div>
+    <input type="search" id="search-input" placeholder="🔍 Nom, société, lieu…" oninput="applyFilters()">
+    <select id="time-filter" onchange="applyFilters()"><option value="">Tous horaires</option></select>
+    <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="row-count"></span>
   </div>
 
-  <!-- TABLE -->
   <div class="table-wrapper">
     <table id="main-table">
       <thead>
         <tr>
-          <th onclick="sortBy('day')" title="Trier">Jour <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('time')" title="Trier">Heure <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('location')">Lieu <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('host')">Hôte <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('hostCompany')">Entreprise hôte <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('guest')">Invité(e) <span class="sort-icon">↕</span></th>
-          <th onclick="sortBy('guestCompany')">Entreprise invitée <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('day')">Jour ↕</th>
+          <th onclick="sortBy('time')">Heure ↕</th>
+          <th onclick="sortBy('location')">Lieu ↕</th>
+          <th onclick="sortBy('host')">Hôte ↕</th>
+          <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
+          <th onclick="sortBy('guest')">Invité(e) ↕</th>
+          <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
           <th style="text-align:center;min-width:90px">Présence</th>
           <th style="min-width:140px">Notes</th>
         </tr>
@@ -394,393 +282,240 @@
     </table>
     <div class="empty-state" id="empty-state" style="display:none">
       <div style="font-size:32px">🔍</div>
-      <p>Aucun rendez-vous ne correspond à votre recherche.</p>
+      <p>Aucun rendez-vous trouvé.</p>
     </div>
   </div>
 </div>
 
 <script>
-// ──────────────────────────────────────────────
-// STATE
-// ──────────────────────────────────────────────
-let meetings = [];          // [{id, day, time, location, host, hostCompany, guest, guestCompany, presence, note}]
-let pendingImport = null;   // data pending diff confirmation
-let sortCol = 'time';
-let sortDir = 1;
-let filterDay = 'all';
-let filterPresence = 'all';
-let filterTime = '';
-let filterSearch = '';
-
-// ──────────────────────────────────────────────
-// PDF.JS SETUP
-// ──────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ──────────────────────────────────────────────
-// PDF PARSING
-// ──────────────────────────────────────────────
-async function parsePDF(file) {
-  const ab = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const tc = await page.getTextContent();
-    // Group items by y-position (same line)
-    const lines = {};
-    tc.items.forEach(item => {
-      const y = Math.round(item.transform[5]);
-      if (!lines[y]) lines[y] = [];
-      lines[y].push(item.str);
-    });
-    // Sort by y descending (top to bottom)
-    const sortedY = Object.keys(lines).map(Number).sort((a,b) => b - a);
-    sortedY.forEach(y => {
-      fullText += lines[y].join(' ').trim() + '\n';
-    });
-    fullText += '\n---PAGE---\n';
-  }
-  return fullText;
-}
+// ── STATE ──
+let meetings = [];
+let pendingImport = null;
+let sortCol = 'time', sortDir = 1;
+let filterDay = 'all', filterPresence = 'all', filterTime = '', filterSearch = '';
 
-function extractMeetings(text) {
-  const results = [];
-  
-  // Day+time detection
-  const dayTimeRegex = /Schedule\s+for\s+(Wed|Thu|Fri),\s+Jun\s+(\d+)\s+(\d{2}:\d{2})/gi;
-  const dayMap = { Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven' };
-  const dateMap = { Wed: '17/06', Thu: '18/06', Fri: '19/06' };
-  
-  // Split text into blocks by schedule header
-  const pageBlocks = text.split(/Schedule\s+for\s+(Wed|Thu|Fri),\s+Jun\s+\d+\s+\d{2}:\d{2}/gi);
-  
-  // Re-process with matches
-  const allMatches = [];
-  const re = /Schedule\s+for\s+(Wed|Thu|Fri),\s+Jun\s+(\d+)\s+(\d{2}:\d{2})/gi;
-  let m;
-  const positions = [];
-  while ((m = re.exec(text)) !== null) {
-    positions.push({ index: m.index, end: m.index + m[0].length, dayAbbr: m[1], date: m[2], time: m[3] });
-  }
-  
-  for (let pi = 0; pi < positions.length; pi++) {
-    const pos = positions[pi];
-    const nextPos = positions[pi + 1];
-    const block = text.slice(pos.end, nextPos ? nextPos.index : text.length);
-    
-    const day = dayMap[pos.dayAbbr] || pos.dayAbbr;
-    const time = pos.time;
-    
-    // Parse meeting rows from block
-    // Lines in block — find Host/Guest pairs
-    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-    
-    parseMeetingBlock(lines, day, time, dateMap[pos.dayAbbr] || '', results);
-  }
-  
-  return results;
-}
-
-function parseMeetingBlock(lines, day, time, dateStr, results) {
-  // Strategy: look for patterns of location | person | company | person | company
-  // The PDF text extraction gives us sequential lines
-  // We look for:
-  // 1. Location keywords (Business France, French Companies Booth, International Buyers)
-  // 2. Followed by name+company pairs
-  
-  const locationKeywords = ['Business France', 'French Companies', 'International Buyers'];
-  
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    
-    // Skip page markers, schedule headers, date footers
-    if (line.includes('---PAGE---') || line.includes('11.06.2026') || 
-        line.includes('Business Meetings @') || line.includes('June, 2026') ||
-        line.match(/^\d+\s*\/\s*\d+$/) || line === 'Host' || line === 'Guest(s)' ||
-        line === 'Location') {
-      i++; continue;
-    }
-    
-    // Detect location line
-    const isLocation = locationKeywords.some(k => line.includes(k));
-    
-    if (isLocation) {
-      // Collect location (may span multiple lines)
-      let location = line;
-      let j = i + 1;
-      // Some locations span 2-3 lines
-      while (j < lines.length && j < i + 5) {
-        const next = lines[j];
-        if (locationKeywords.some(k => next.includes(k))) break;
-        if (isNameLike(next) || next === 'Host' || next === 'Guest(s)') break;
-        if (next.match(/^\d{2}:\d{2}$/) || next.includes('---PAGE---')) break;
-        location += ' ' + next;
-        j++;
-      }
-      i = j;
-      
-      // Now read host: name line, then company line
-      const { name: hostName, company: hostCo, nextIdx: after1 } = readPersonEntry(lines, i);
-      if (!hostName) { i++; continue; }
-      i = after1;
-      
-      // Read guest
-      const { name: guestName, company: guestCo, nextIdx: after2 } = readPersonEntry(lines, i);
-      if (!guestName) { continue; }
-      i = after2;
-      
-      const id = `${day}-${time}-${location.trim()}-${hostName}-${guestName}`.replace(/\s+/g, '_');
-      results.push({
-        id,
-        day, time, dateStr,
-        location: cleanLocation(location),
-        host: cleanName(hostName),
-        hostCompany: hostCo.trim(),
-        guest: cleanName(guestName),
-        guestCompany: guestCo.trim(),
-        presence: 'unknown',
-        note: ''
-      });
-    } else {
-      i++;
-    }
-  }
-}
-
-function isNameLike(s) {
-  if (!s || s.length < 3) return false;
-  // Names: capital letter(s), mixed case, not too long pure uppercase
-  if (s.match(/^[A-Z\s]+$/) && s.length > 20) return false;
-  return s.match(/[A-ZÀ-Ü][a-zà-ü]/) || s.match(/^[A-Z]{2,}\s+[A-Z]/);
-}
-
-function readPersonEntry(lines, startIdx) {
-  let idx = startIdx;
-  // Skip empty/system lines
-  while (idx < lines.length) {
-    const l = lines[idx];
-    if (l && !l.includes('---PAGE---') && !l.match(/^\d+\s*\/\s*\d+$/) && l !== 'Location' && l !== 'Host' && l !== 'Guest(s)') break;
-    idx++;
-  }
-  if (idx >= lines.length) return { name: null, company: '', nextIdx: idx };
-  
-  // Sometimes initials like "PC" or "MR" precede the name
-  let name = lines[idx];
-  // Skip 2-letter initials
-  if (name.match(/^[A-Z]{2,3}$/) || name.match(/^[A-Z]{2}\s*$/)) {
-    idx++;
-    if (idx < lines.length) name = lines[idx];
-  }
-  idx++;
-  
-  // Company is the next non-empty line (that's not a location keyword)
-  let company = '';
-  while (idx < lines.length) {
-    const l = lines[idx];
-    if (!l || l.includes('---PAGE---') || l.match(/^\d+\s*\/\s*\d+$/)) { idx++; break; }
-    if (locationKeywords.some(k => l.includes(k))) break;
-    company = l;
-    idx++;
-    break;
-  }
-  
-  return { name, company, nextIdx: idx };
-}
-
-const locationKeywords = ['Business France', 'French Companies', 'International Buyers'];
-
-function cleanLocation(loc) {
-  return loc.replace(/\s+/g, ' ')
-            .replace(/Business France\s*-\s*3G13\s*-?\s*/i, 'BF 3G13 — ')
-            .replace(/French Companies\s+Booth\s*-?\s*/i, 'Stand ')
-            .replace(/International Buyers\s+Lounge by\s+Business\s+France\s*-\s*Hall\s*7\.2\s*:\s*Business\s*Plaza\s*-?\s*/i, 'Lounge Hall 7.2 ')
-            .replace(/\s+/g, ' ').trim();
-}
-
-function cleanName(n) {
-  if (!n) return '';
-  // Remove stray unicode markers
-  return n.replace(/[⯑◇]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-// ──────────────────────────────────────────────
-// BETTER PARSER using structured approach
-// ──────────────────────────────────────────────
-async function parsePDFStructured(file) {
-  showLoading('Lecture du PDF…');
+// ── PDF PARSING — column-based approach ──
+async function parsePDFFile(file) {
+  showLoading('Ouverture du PDF…');
   const ab = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
   
   const allMeetings = [];
+  let currentDay = null, currentTime = null;
   
+  const DAY_MAP  = { Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven' };
+  const DATE_MAP = { Wed: '17/06', Thu: '18/06', Fri: '19/06' };
+
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    updateLoading(`Analyse page ${pageNum}/${pdf.numPages}…`);
+    updateLoading(`Analyse page ${pageNum} / ${pdf.numPages}…`, `${allMeetings.length} RDV trouvés jusqu\'ici`);
+    
     const page = await pdf.getPage(pageNum);
-    const tc = await page.getTextContent();
-    
-    // Group text items by their Y coordinate (same line = same Y)
-    const byY = {};
-    tc.items.forEach(item => {
-      if (!item.str.trim()) return;
-      const y = Math.round(item.transform[5] * 10) / 10;
-      if (!byY[y]) byY[y] = { y, items: [] };
-      byY[y].items.push({ x: item.transform[4], text: item.str });
+    const tc   = await page.getTextContent();
+    const vp   = page.getViewport({ scale: 1 });
+    const pageW = vp.width;
+
+    // ── Collect items with normalized coords ──
+    const items = tc.items
+      .filter(i => i.str && i.str.trim())
+      .map(i => ({
+        x: i.transform[4],
+        y: Math.round(i.transform[5]),   // round to group items on same line
+        text: i.str.trim()
+      }));
+
+    // ── Group into lines by Y ──
+    const lineMap = {};
+    items.forEach(i => {
+      if (!lineMap[i.y]) lineMap[i.y] = [];
+      lineMap[i.y].push(i);
     });
+
+    // Sort lines top→bottom (PDF y=0 is bottom, larger y = higher on page)
+    const lines = Object.values(lineMap)
+      .sort((a, b) => b[0].y - a[0].y)
+      .map(items => {
+        items.sort((a, b) => a.x - b.x);
+        return {
+          y: items[0].y,
+          items,
+          // Build column-split text
+          // Page is ~3 columns. Use x thresholds relative to page width.
+          // Col1 (Location): x < 33% of page
+          // Col2 (Host):    33-66%
+          // Col3 (Guest):   > 66%
+          left:   items.filter(i => i.x < pageW * 0.33).map(i => i.text).join(' '),
+          middle: items.filter(i => i.x >= pageW * 0.33 && i.x < pageW * 0.66).map(i => i.text).join(' '),
+          right:  items.filter(i => i.x >= pageW * 0.66).map(i => i.text).join(' '),
+          full:   items.map(i => i.text).join(' ')
+        };
+      });
+
+    // ── Process lines ──
+    // We'll build a structured list of "row groups"
+    // A row group = one meeting = location + (host name + host company) + (guest name + guest company)
     
-    // Sort lines top-to-bottom (higher Y = higher on page in PDF coords)
-    const sortedLines = Object.values(byY)
-      .sort((a, b) => b.y - a.y)
-      .map(row => {
-        row.items.sort((a, b) => a.x - b.x);
-        return row.items.map(i => i.text).join(' ').trim();
-      })
-      .filter(Boolean);
-    
-    // Extract schedule header for this page
-    let currentDay = null, currentTime = null, currentDateStr = null;
-    
-    for (let i = 0; i < sortedLines.length; i++) {
-      const line = sortedLines[i];
-      
-      // Detect schedule header
-      const schedMatch = line.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+(\d+)\s+(\d{2}:\d{2})/i);
+    // First pass: find schedule headers & meeting rows
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const full = line.full;
+
+      // ── Schedule header ──
+      const schedMatch = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
       if (schedMatch) {
-        const dayMap2 = { Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven' };
-        const dateMap2 = { Wed: '17/06', Thu: '18/06', Fri: '19/06' };
-        currentDay = dayMap2[schedMatch[1]] || schedMatch[1];
-        currentDateStr = dateMap2[schedMatch[1]] || '';
-        currentTime = schedMatch[3];
+        currentDay  = DAY_MAP[schedMatch[1]]  || schedMatch[1];
+        currentTime = schedMatch[2];
+        i++; continue;
+      }
+
+      if (!currentDay) { i++; continue; }
+
+      // ── Skip metadata ──
+      if (isMetaLine(full)) { i++; continue; }
+
+      // ── Detect a location cell (left column) ──
+      if (isLocationStart(line.left || line.full)) {
+        // Accumulate location across consecutive lines where left col has content
+        let locationParts = [];
+        let j = i;
+        
+        while (j < lines.length && j < i + 6) {
+          const l = lines[j];
+          if (j > i && isMetaLine(l.full)) break;
+          if (j > i && isScheduleHeader(l.full)) break;
+          
+          const leftTxt = l.left.trim();
+          if (j === i) {
+            // First line: location starts here
+            locationParts.push(leftTxt || l.full);
+          } else {
+            // Continue location only if left col has content and it looks like location continuation
+            if (leftTxt && isLocationContinuation(leftTxt)) {
+              locationParts.push(leftTxt);
+            } else {
+              break;
+            }
+          }
+          j++;
+        }
+
+        const location = cleanLocation(locationParts.join(' '));
+
+        // Now extract host and guest from the same group of lines
+        // Collect middle and right column text from lines i..j
+        const midLines = [], rightLines = [];
+        for (let k = i; k < j; k++) {
+          if (lines[k].middle.trim()) midLines.push(lines[k].middle.trim());
+          if (lines[k].right.trim())  rightLines.push(lines[k].right.trim());
+        }
+        
+        // Also look ahead a few more lines for host/guest data
+        // (sometimes name/company are on separate lines beyond the location block)
+        let k = j;
+        while (k < lines.length && k < j + 8) {
+          const l = lines[k];
+          if (isMetaLine(l.full) || isScheduleHeader(l.full) || isLocationStart(l.left)) break;
+          if (l.left.trim() && !isLocationContinuation(l.left)) break;
+          if (l.middle.trim()) midLines.push(l.middle.trim());
+          if (l.right.trim())  rightLines.push(l.right.trim());
+          k++;
+        }
+        i = k;
+
+        // Parse host from midLines (first non-initial line = name, second = company)
+        const host  = extractPerson(midLines);
+        const guest = extractPerson(rightLines);
+
+        if (host.name && guest.name) {
+          const id = `${currentDay}|${currentTime}|${location}|${host.name}|${guest.name}`;
+          allMeetings.push({
+            id,
+            day: currentDay, time: currentTime,
+            location,
+            host: host.name, hostCompany: host.company,
+            guest: guest.name, guestCompany: guest.company,
+            presence: 'unknown', note: ''
+          });
+        }
         continue;
       }
-      
-      if (!currentDay) continue;
-      
-      // Skip metadata lines
-      if (line.match(/^\d{2}\.\d{2}\.\d{4}/) || line.match(/^\d+\s*\/\s*\d+$/) ||
-          line.includes('Business Meetings @') || line.includes('June, 2026') ||
-          line === 'Location' || line === 'Host' || line === 'Guest(s)') continue;
-      
-      // ── PARSE ROW: Location | Host name | Host company | Guest name | Guest company ──
-      // The PDF has 3 columns: Location (left), Host (middle), Guest (right)
-      // We detect rows by seeing location keywords
-      
-      const locMatch = detectLocation(line, sortedLines, i);
-      if (locMatch) {
-        const { location, consumed } = locMatch;
-        i += consumed;
-        
-        // Read host (name + company = 2 lines) then guest (name + company = 2 lines)
-        // Skip initials-only lines
-        let remaining = sortedLines.slice(i);
-        const host = extractPersonFromLines(remaining, 0);
-        if (!host.name) continue;
-        remaining = remaining.slice(host.linesConsumed);
-        
-        const guest = extractPersonFromLines(remaining, 0);
-        if (!guest.name) continue;
-        i += host.linesConsumed + guest.linesConsumed - 1;
-        
-        const id = [currentDay, currentTime, location, host.name, guest.name]
-          .join('|').replace(/\s+/g, ' ');
-        
-        allMeetings.push({
-          id,
-          day: currentDay,
-          time: currentTime,
-          dateStr: currentDateStr,
-          location: location.trim(),
-          host: cleanName(host.name),
-          hostCompany: host.company.trim(),
-          guest: cleanName(guest.name),
-          guestCompany: guest.company.trim(),
-          presence: 'unknown',
-          note: ''
-        });
-      }
+
+      i++;
     }
   }
-  
+
   hideLoading();
   return allMeetings;
 }
 
-function detectLocation(line, lines, i) {
-  const locPrefixes = [
-    /^Business France/i,
-    /^French Companies\s+Booth/i,
-    /^International\s+Buyers/i
-  ];
-  
-  for (const re of locPrefixes) {
-    if (re.test(line)) {
-      // Location may continue on next few lines until we hit non-location content
-      let loc = line;
-      let consumed = 0;
-      for (let k = 1; k <= 4; k++) {
-        if (i + k >= lines.length) break;
-        const next = lines[i + k];
-        if (!next || next === 'Host' || next === 'Guest(s)' || next === 'Location') break;
-        if (locPrefixes.some(r => r.test(next))) break;
-        if (next.match(/^\d{2}\.\d{2}/) || next.match(/^\d+\s*\/\s*\d+$/)) break;
-        if (next.match(/^[A-Z]{2,3}$/) ) break; // initials
-        // Likely still location text
-        if (next.match(/^(Booth|Hall|Table|pavillon|Stand|Sasu|etage|Avenue|Village|IDF|CNRS|CCI|HALL|Lounge|French Tech|Hornswaggle|CircularPlace|Suricate|DUKE|PowerUp|SiPearl|Moderlab|Contractzlab|NOSTRESS|Bodyguard|Save Your|EdTake|Pappers)/i)) {
-          loc += ' ' + next;
-          consumed = k;
-        } else {
-          break;
-        }
-      }
-      return { location: formatLocation(loc), consumed };
-    }
-  }
-  return null;
+// ── HELPERS ──
+function isMetaLine(s) {
+  return !s ||
+    s.match(/^\d{2}\.\d{2}\.\d{4}/) ||
+    s.match(/^\d+\s*\/\s*\d+$/) ||
+    s.includes('Business Meetings @') ||
+    s.includes('June, 2026') ||
+    s === 'Location' || s === 'Host' || s === 'Guest(s)' ||
+    s.match(/^17 June/) || s.match(/^18 June/) || s.match(/^19 June/);
 }
 
-function formatLocation(raw) {
-  return raw.replace(/\s+/g, ' ')
-    .replace(/Business France\s*-?\s*3G13\s*-?\s*/i, 'BF 3G13 — ')
-    .replace(/French Companies\s+Booth\s*-?\s*/i, 'Stand ')
-    .replace(/International\s+Buyers\s+Lounge[^-]*-\s*(Hall\s*7\.2\s*:\s*Business\s*Plaza\s*-?\s*)?/i, 'Lounge ')
+function isScheduleHeader(s) {
+  return !!s.match(/Schedule\s+for\s+(Wed|Thu|Fri)/i);
+}
+
+function isLocationStart(s) {
+  if (!s) return false;
+  return s.match(/^Business\s+France/i) ||
+         s.match(/^French\s+Companies/i) ||
+         s.match(/^International\s+Buyers/i);
+}
+
+function isLocationContinuation(s) {
+  if (!s || s.length < 2) return false;
+  // Location continuations are things like room/booth identifiers
+  const locationWords = ['Booth','Hall','Table','pavillon','Stand','Sasu','etage','Avenue',
+    'Village','IDF','CNRS','CCI','HALL','Lounge','French Tech','Hornswaggle','CircularPlace',
+    'Suricate','DUKE','PowerUp','SiPearl','Moderlab','Contractzlab','NOSTRESS','Bodyguard',
+    'Save Your','EdTake','Pappers','3G13','Plaza','Business','France','Buyers','Companies',
+    '-','–','—'];
+  return locationWords.some(w => s.includes(w)) || s.match(/^\d[A-Z]\d/) || s.match(/^[A-Z]\d{1,2}/);
+}
+
+function extractPerson(textLines) {
+  // Filter out junk
+  const clean = textLines
+    .map(s => s.trim())
+    .filter(s => s && !isMetaLine(s) && s !== 'Host' && s !== 'Guest(s)');
+  
+  if (!clean.length) return { name: '', company: '' };
+  
+  let nameIdx = 0;
+  // Skip pure 2-3 letter initials (PC, MR, GH, etc.)
+  while (nameIdx < clean.length && clean[nameIdx].match(/^[A-Z]{1,3}$/)) nameIdx++;
+  
+  const name    = clean[nameIdx]    ? cleanPersonName(clean[nameIdx])    : '';
+  const company = clean[nameIdx+1]  ? clean[nameIdx+1].trim()            : '';
+  
+  return { name, company };
+}
+
+function cleanPersonName(s) {
+  // Remove stray chars from PDF extraction
+  return s.replace(/[⯑◇♦]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function cleanLocation(raw) {
+  return raw
+    .replace(/\s+/g, ' ')
+    .replace(/Business\s+France\s*[-–]\s*3G13\s*[-–]?\s*/i, 'BF 3G13 — ')
+    .replace(/French\s+Companies\s+Booth\s*[-–]?\s*/i, 'Stand ')
+    .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*:\s*Business\s*Plaza\s*[-–]?\s*/i, 'Lounge Hall 7.2 ')
     .replace(/\s+/g, ' ').trim();
 }
 
-function extractPersonFromLines(lines, start) {
-  let i = start;
-  const skipLine = l => !l || l.match(/^\d{2}\.\d{2}/) || l.match(/^\d+\s*\/\s*\d+$/) ||
-    l === 'Host' || l === 'Guest(s)' || l === 'Location' ||
-    ['Business France', 'French Companies', 'International Buyers'].some(k => l.includes(k));
-  
-  while (i < lines.length && skipLine(lines[i])) i++;
-  if (i >= lines.length) return { name: null, company: '', linesConsumed: i - start + 1 };
-  
-  // Skip pure initial lines (PC, MR, VF, etc.)
-  let name = lines[i]; i++;
-  if (name && name.match(/^[A-Z]{1,3}$|^[A-Z]{2}\s*$/)) {
-    // This is an initial badge, next line is actual name
-    while (i < lines.length && skipLine(lines[i])) i++;
-    if (i < lines.length) { name = lines[i]; i++; }
-  }
-  
-  // Next non-skip line is company
-  while (i < lines.length && skipLine(lines[i])) i++;
-  let company = '';
-  if (i < lines.length) {
-    const potentialCompany = lines[i];
-    // It's a company if it doesn't look like a location prefix
-    const isNotLocation = !['Business France', 'French Companies', 'International Buyers']
-      .some(k => potentialCompany.includes(k));
-    if (isNotLocation) { company = potentialCompany; i++; }
-  }
-  
-  return { name, company, linesConsumed: i - start };
-}
-
-// ──────────────────────────────────────────────
-// FILE HANDLING
-// ──────────────────────────────────────────────
+// ── FILE HANDLING ──
 async function handleFile(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], false);
@@ -795,55 +530,39 @@ async function handleReimport(input) {
 
 async function processNewPDF(file, isReimport) {
   try {
-    const parsed = await parsePDFStructured(file);
+    const parsed = await parsePDFFile(file);
     
     if (!parsed.length) {
-      alert('Aucun rendez-vous trouvé dans ce PDF. Vérifiez le format du fichier.');
+      // Show debug info
+      alert(`Aucun rendez-vous trouvé (0 RDV extraits sur ${file.name}).\n\nVérifiez que le PDF contient bien des pages "Schedule for Wed/Thu/Fri".`);
       return;
     }
-    
+
     if (isReimport && meetings.length > 0) {
-      // Compute diff
       const existingIds = new Set(meetings.map(m => m.id));
-      const newIds = new Set(parsed.map(m => m.id));
-      
-      const added = parsed.filter(m => !existingIds.has(m.id));
+      const newIds      = new Set(parsed.map(m => m.id));
+      const added   = parsed.filter(m => !existingIds.has(m.id));
       const removed = meetings.filter(m => !newIds.has(m.id));
-      const kept = parsed.filter(m => existingIds.has(m.id));
-      
+      const kept    = parsed.filter(m => existingIds.has(m.id));
       pendingImport = { parsed, added, removed, kept };
       showDiffModal(added, removed, kept);
     } else {
       meetings = parsed;
       initApp();
     }
-  } catch (e) {
+  } catch(e) {
     hideLoading();
     console.error(e);
-    alert('Erreur lors de la lecture du PDF : ' + e.message);
+    alert('Erreur lors de la lecture du PDF :\n' + e.message);
   }
 }
 
 function showDiffModal(added, removed, kept) {
-  const summary = document.getElementById('diff-summary');
-  summary.innerHTML = `
-    <div class="diff-line">
-      <span>RDV maintenus</span>
-      <strong>${kept.length}</strong>
-    </div>
-    <div class="diff-line" style="color:#2e7d32">
-      <span>➕ Nouveaux RDV ajoutés</span>
-      <strong>${added.length}</strong>
-    </div>
-    <div class="diff-line" style="color:#c62828">
-      <span>➖ RDV supprimés</span>
-      <strong>${removed.length}</strong>
-    </div>
-    <div class="diff-line">
-      <span>✅ Coches de présence conservées</span>
-      <strong>${meetings.filter(m => m.presence !== 'unknown').length}</strong>
-    </div>
-  `;
+  document.getElementById('diff-summary').innerHTML = `
+    <div class="diff-line"><span>RDV maintenus</span><strong>${kept.length}</strong></div>
+    <div class="diff-line" style="color:#2e7d32"><span>➕ Nouveaux RDV</span><strong>${added.length}</strong></div>
+    <div class="diff-line" style="color:#c62828"><span>➖ RDV supprimés</span><strong>${removed.length}</strong></div>
+    <div class="diff-line"><span>✅ Coches conservées</span><strong>${meetings.filter(m=>m.presence!=='unknown').length}</strong></div>`;
   document.getElementById('diff-modal').classList.add('open');
 }
 
@@ -854,255 +573,178 @@ function closeDiffModal() {
 
 function applyImport() {
   if (!pendingImport) return;
-  const { parsed } = pendingImport;
-  
-  // Preserve existing presence/notes
   const existingMap = {};
-  meetings.forEach(m => { existingMap[m.id] = m; });
-  
-  meetings = parsed.map(m => {
-    const existing = existingMap[m.id];
-    return existing ? { ...m, presence: existing.presence, note: existing.note } : m;
+  meetings.forEach(m => existingMap[m.id] = m);
+  meetings = pendingImport.parsed.map(m => {
+    const ex = existingMap[m.id];
+    return ex ? { ...m, presence: ex.presence, note: ex.note } : m;
   });
-  
   closeDiffModal();
   initApp();
 }
 
-// ──────────────────────────────────────────────
-// APP INITIALIZATION
-// ──────────────────────────────────────────────
+// ── APP INIT ──
 function initApp() {
   document.getElementById('upload-zone').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   
-  // Populate time filter
   const times = [...new Set(meetings.map(m => m.time))].sort();
-  const timeSelect = document.getElementById('time-filter');
-  timeSelect.innerHTML = '<option value="">Tous les horaires</option>';
-  times.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t; opt.textContent = t;
-    timeSelect.appendChild(opt);
-  });
+  const sel = document.getElementById('time-filter');
+  sel.innerHTML = '<option value="">Tous horaires</option>';
+  times.forEach(t => { const o = document.createElement('option'); o.value = o.textContent = t; sel.appendChild(o); });
   
   render();
 }
 
-// ──────────────────────────────────────────────
-// RENDER
-// ──────────────────────────────────────────────
+// ── RENDER ──
 function render() {
   updateStats();
   const filtered = getFiltered();
   renderTable(filtered);
-  document.getElementById('row-count').textContent = `${filtered.length} ligne${filtered.length > 1 ? 's' : ''}`;
+  document.getElementById('row-count').textContent = `${filtered.length} ligne${filtered.length>1?'s':''}`;
 }
 
 function getFiltered() {
   let data = [...meetings];
-  
-  if (filterDay !== 'all') data = data.filter(m => m.day === filterDay);
+  if (filterDay !== 'all')      data = data.filter(m => m.day === filterDay);
   if (filterPresence !== 'all') data = data.filter(m => m.presence === filterPresence);
-  if (filterTime) data = data.filter(m => m.time === filterTime);
-  
+  if (filterTime)               data = data.filter(m => m.time === filterTime);
   if (filterSearch) {
     const q = filterSearch.toLowerCase();
     data = data.filter(m =>
-      m.host.toLowerCase().includes(q) ||
-      m.hostCompany.toLowerCase().includes(q) ||
-      m.guest.toLowerCase().includes(q) ||
-      m.guestCompany.toLowerCase().includes(q) ||
-      m.location.toLowerCase().includes(q)
+      [m.host, m.hostCompany, m.guest, m.guestCompany, m.location]
+        .some(s => s.toLowerCase().includes(q))
     );
   }
-  
-  // Sort
-  data.sort((a, b) => {
-    let va = a[sortCol] || '', vb = b[sortCol] || '';
+  data.sort((a,b) => {
+    const va = a[sortCol]||'', vb = b[sortCol]||'';
     return va < vb ? -sortDir : va > vb ? sortDir : 0;
   });
-  
   return data;
 }
 
 function renderTable(data) {
   const tbody = document.getElementById('table-body');
   const empty = document.getElementById('empty-state');
-  
-  if (!data.length) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-  
-  const dayClass = { 'Mer': 'day-wed', 'Jeu': 'day-thu', 'Ven': 'day-fri' };
-  const dayLabel = { 'Mer': 'Mer 17/06', 'Jeu': 'Jeu 18/06', 'Ven': 'Ven 19/06' };
-  
+  const dayClass = { Mer:'day-wed', Jeu:'day-thu', Ven:'day-fri' };
+  const dayLabel = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
   tbody.innerHTML = data.map(m => {
-    const presClass = m.presence === 'present' ? 'present-row' : m.presence === 'absent' ? 'absent-row' : '';
-    const dc = dayClass[m.day] || '';
-    const dl = dayLabel[m.day] || m.day;
-    
-    const btnP = `<button class="toggle-btn ${m.presence==='present'?'active-present':''}" onclick="togglePresence('${esc(m.id)}','present')" title="Présent">✓</button>`;
-    const btnA = `<button class="toggle-btn ${m.presence==='absent'?'active-absent':''}" onclick="togglePresence('${esc(m.id)}','absent')" title="Absent">✗</button>`;
-    
-    return `<tr class="${presClass}" data-id="${esc(m.id)}">
-      <td><span class="day-badge ${dc}">${dl}</span></td>
+    const pc = m.presence==='present'?'present-row': m.presence==='absent'?'absent-row':'';
+    const id = esc(m.id);
+    return `<tr class="${pc}">
+      <td><span class="day-badge ${dayClass[m.day]||''}">${dayLabel[m.day]||m.day}</span></td>
       <td class="time-cell">${m.time}</td>
       <td class="location-cell">${esc(m.location)}</td>
       <td><div class="person-name">${esc(m.host)}</div></td>
       <td><div class="person-company">${esc(m.hostCompany)}</div></td>
       <td><div class="person-name">${esc(m.guest)}</div></td>
       <td><div class="person-company">${esc(m.guestCompany)}</div></td>
-      <td><div class="presence-toggle">${btnP}${btnA}</div></td>
-      <td><input class="note-input" value="${esc(m.note)}" placeholder="Ajouter une note…" onchange="updateNote('${esc(m.id)}',this.value)" oninput="updateNote('${esc(m.id)}',this.value)"></td>
+      <td><div class="presence-toggle">
+        <button class="toggle-btn ${m.presence==='present'?'active-present':''}" onclick="togglePresence('${id}','present')" title="Présent">✓</button>
+        <button class="toggle-btn ${m.presence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','absent')" title="Absent">✗</button>
+      </div></td>
+      <td><input class="note-input" value="${esc(m.note)}" placeholder="Note…" onchange="updateNote('${id}',this.value)"></td>
     </tr>`;
   }).join('');
 }
 
 function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function updateStats() {
-  const total = meetings.length;
-  const present = meetings.filter(m => m.presence === 'present').length;
-  const absent = meetings.filter(m => m.presence === 'absent').length;
-  const unknown = total - present - absent;
-  
-  document.getElementById('stat-total').textContent = total;
+  const total   = meetings.length;
+  const present = meetings.filter(m=>m.presence==='present').length;
+  const absent  = meetings.filter(m=>m.presence==='absent').length;
+  document.getElementById('stat-total').textContent   = total;
   document.getElementById('stat-present').textContent = present;
-  document.getElementById('stat-absent').textContent = absent;
-  document.getElementById('stat-unknown').textContent = unknown;
-  
-  const pPct = total ? (present / total * 100).toFixed(1) : 0;
-  const aPct = total ? (absent / total * 100).toFixed(1) : 0;
-  document.getElementById('bar-present').style.width = pPct + '%';
-  document.getElementById('bar-absent').style.width = aPct + '%';
+  document.getElementById('stat-absent').textContent  = absent;
+  document.getElementById('stat-unknown').textContent = total - present - absent;
+  const pp = total ? (present/total*100).toFixed(1) : 0;
+  const ap = total ? (absent/total*100).toFixed(1)  : 0;
+  document.getElementById('bar-present').style.width = pp+'%';
+  document.getElementById('bar-absent').style.width  = ap+'%';
 }
 
-// ──────────────────────────────────────────────
-// INTERACTIONS
-// ──────────────────────────────────────────────
+// ── INTERACTIONS ──
 function togglePresence(id, val) {
-  const m = meetings.find(m => m.id === id);
-  if (!m) return;
-  m.presence = m.presence === val ? 'unknown' : val;
-  render();
+  const m = meetings.find(m=>m.id===id);
+  if (m) { m.presence = m.presence===val ? 'unknown' : val; render(); }
 }
-
 function updateNote(id, val) {
-  const m = meetings.find(m => m.id === id);
+  const m = meetings.find(m=>m.id===id);
   if (m) m.note = val;
 }
-
 function setDayFilter(btn) {
   filterDay = btn.dataset.day;
-  document.querySelectorAll('[data-day]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  render();
+  document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); render();
 }
-
 function setPresenceFilter(btn) {
   filterPresence = btn.dataset.presence;
-  document.querySelectorAll('[data-presence]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  render();
+  document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); render();
 }
-
 function applyFilters() {
   filterSearch = document.getElementById('search-input').value;
-  filterTime = document.getElementById('time-filter').value;
+  filterTime   = document.getElementById('time-filter').value;
   render();
 }
-
 function sortBy(col) {
-  if (sortCol === col) sortDir *= -1;
-  else { sortCol = col; sortDir = 1; }
+  if (sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; }
   render();
 }
 
-// ──────────────────────────────────────────────
-// EXPORT EXCEL
-// ──────────────────────────────────────────────
+// ── EXPORT ──
 function exportExcel() {
   const wb = XLSX.utils.book_new();
+  const pl = { present:'✓ Présent', absent:'✗ Absent', unknown:'?' };
+  const dl = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
   
-  const dayLabel = { Mer: 'Mer 17/06', Jeu: 'Jeu 18/06', Ven: 'Ven 19/06' };
-  const presLabel = { present: '✓ Présent', absent: '✗ Absent', unknown: '?' };
-  
-  // Main sheet
-  const rows = [['Jour', 'Heure', 'Lieu', 'Hôte', 'Entreprise hôte', 'Invité(e)', 'Entreprise invitée', 'Présence', 'Notes']];
-  meetings.forEach(m => {
-    rows.push([
-      dayLabel[m.day] || m.day,
-      m.time,
-      m.location,
-      m.host, m.hostCompany,
-      m.guest, m.guestCompany,
-      presLabel[m.presence] || '?',
-      m.note
-    ]);
-  });
-  
+  const rows = [['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
+  meetings.forEach(m => rows.push([dl[m.day]||m.day, m.time, m.location, m.host, m.hostCompany, m.guest, m.guestCompany, pl[m.presence]||'?', m.note]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [12,8,35,22,28,22,28,14,25].map(w => ({wch: w}));
+  ws['!cols'] = [12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws, 'Planning RDV');
-  
-  // Stats sheet
-  const days = ['Mer', 'Jeu', 'Ven'];
-  const statsRows = [['Jour', 'Total RDV', 'Présents', 'Absents', 'Non renseigné', 'Taux présence']];
-  days.forEach(d => {
-    const dayMeetings = meetings.filter(m => m.day === d);
-    const p = dayMeetings.filter(m => m.presence === 'present').length;
-    const a = dayMeetings.filter(m => m.presence === 'absent').length;
-    const u = dayMeetings.length - p - a;
-    const rate = dayMeetings.length ? ((p / dayMeetings.length) * 100).toFixed(1) + '%' : '-';
-    statsRows.push([dayLabel[d], dayMeetings.length, p, a, u, rate]);
+
+  const statsRows = [['Jour','Total','Présents','Absents','Non renseigné','Taux']];
+  ['Mer','Jeu','Ven'].forEach(d => {
+    const dm = meetings.filter(m=>m.day===d);
+    const p = dm.filter(m=>m.presence==='present').length;
+    const a = dm.filter(m=>m.presence==='absent').length;
+    statsRows.push([dl[d], dm.length, p, a, dm.length-p-a, dm.length ? ((p/dm.length)*100).toFixed(1)+'%' : '-']);
   });
-  const total = meetings.length;
-  const tp = meetings.filter(m => m.presence === 'present').length;
-  const ta = meetings.filter(m => m.presence === 'absent').length;
-  statsRows.push(['TOTAL', total, tp, ta, total - tp - ta, total ? ((tp/total)*100).toFixed(1) + '%' : '-']);
-  
+  const t=meetings.length, tp=meetings.filter(m=>m.presence==='present').length, ta=meetings.filter(m=>m.presence==='absent').length;
+  statsRows.push(['TOTAL', t, tp, ta, t-tp-ta, t?((tp/t)*100).toFixed(1)+'%':'-']);
   const ws2 = XLSX.utils.aoa_to_sheet(statsRows);
-  ws2['!cols'] = [15,12,12,12,15,15].map(w => ({wch: w}));
+  ws2['!cols'] = [15,10,10,10,14,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws2, 'Résumé');
   
-  const date = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `Vivatech_2026_RDV_${date}.xlsx`);
+  XLSX.writeFile(wb, `Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ──────────────────────────────────────────────
-// LOADING HELPERS
-// ──────────────────────────────────────────────
-function showLoading(msg) {
-  document.getElementById('loading-text').textContent = msg || 'Chargement…';
+// ── LOADING ──
+function showLoading(msg, sub) {
+  document.getElementById('loading-text').textContent = msg||'Chargement…';
+  document.getElementById('loading-sub').textContent  = sub||'';
   document.getElementById('loading').classList.add('show');
 }
-function updateLoading(msg) {
+function updateLoading(msg, sub) {
   document.getElementById('loading-text').textContent = msg;
+  document.getElementById('loading-sub').textContent  = sub||'';
 }
-function hideLoading() {
-  document.getElementById('loading').classList.remove('show');
-}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
 
-// ──────────────────────────────────────────────
-// DRAG & DROP
-// ──────────────────────────────────────────────
-const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type === 'application/pdf') {
-    processNewPDF(file, false);
-  }
+// ── DRAG & DROP ──
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', ()  => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f?.type === 'application/pdf') processNewPDF(f, false);
 });
 </script>
 </body>
