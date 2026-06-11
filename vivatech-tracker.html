@@ -7,12 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --navy:#0d1b2a;--navy2:#1a2e45;--blue:#1565c0;--blue-lt:#1976d2;
-    --accent:#e53935;--gold:#f9a825;--green:#2e7d32;
-    --grey:#90a4ae;--grey-lt:#eceff1;--grey-mid:#cfd8dc;
-    --text:#1a2e45;--text-soft:#546e7a;--surface:#f5f7fa;
-  }
+  :root{--navy:#0d1b2a;--navy2:#1a2e45;--blue:#1565c0;--blue-lt:#1976d2;--accent:#e53935;--gold:#f9a825;--green:#2e7d32;--grey:#90a4ae;--grey-lt:#eceff1;--grey-mid:#cfd8dc;--text:#1a2e45;--text-soft:#546e7a;--surface:#f5f7fa}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--surface);color:var(--text);font-size:13px}
   header{background:var(--navy);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
@@ -26,7 +21,7 @@
   .btn-outline{background:transparent;color:white;border:1px solid rgba(255,255,255,.3)}.btn-outline:hover{background:rgba(255,255,255,.1)}
   .btn-success{background:var(--green);color:white}.btn-success:hover{background:#1b5e20}
   .btn-cancel{background:var(--grey-lt);color:var(--text)}
-  #upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
+  #upload-zone{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
   .upload-card{background:white;border-radius:16px;padding:56px 64px;box-shadow:0 2px 8px rgba(13,27,42,.1);text-align:center;max-width:480px;border:2px dashed var(--grey-mid);transition:border-color .2s}
   .upload-card.dragover{border-color:var(--blue-lt)}
   .upload-icon{font-size:48px;margin-bottom:16px}
@@ -40,20 +35,16 @@
   .stat-item{display:flex;flex-direction:column;align-items:center;min-width:70px}
   .stat-num{font-size:20px;font-weight:700;line-height:1}
   .stat-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
-  .stat-item.present .stat-num{color:#81c784}
-  .stat-item.absent .stat-num{color:#ef9a9a}
-  .stat-item.unknown .stat-num{color:#fff59d}
+  .stat-item.present .stat-num{color:#81c784}.stat-item.absent .stat-num{color:#ef9a9a}.stat-item.unknown .stat-num{color:#fff59d}
   .presence-bar{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}
   .presence-bar-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em}
   .presence-bar-track{height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden;display:flex}
-  .bar-present{background:#81c784;transition:width .4s}
-  .bar-absent{background:#ef9a9a;transition:width .4s}
+  .bar-present{background:#81c784;transition:width .4s}.bar-absent{background:#ef9a9a;transition:width .4s}
   .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .toolbar-sep{width:1px;height:24px;background:var(--grey-mid)}
   .filter-tabs{display:flex;gap:2px}
   .filter-tab{padding:6px 14px;border-radius:6px;border:1px solid var(--grey-mid);background:white;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-soft);transition:all .15s}
-  .filter-tab.active{background:var(--navy);color:white;border-color:var(--navy)}
-  .filter-tab:hover:not(.active){background:var(--grey-lt)}
+  .filter-tab.active{background:var(--navy);color:white;border-color:var(--navy)}.filter-tab:hover:not(.active){background:var(--grey-lt)}
   input[type=search],select{padding:7px 12px;border-radius:6px;border:1px solid var(--grey-mid);font-size:12px;color:var(--text);background:white;outline:none}
   input[type=search]:focus,select:focus{border-color:var(--blue-lt)}
   input[type=search]{width:220px}
@@ -62,43 +53,35 @@
   thead th{position:sticky;top:0;z-index:10;background:var(--navy);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
   thead th:hover{background:var(--navy2)}
   tbody tr{border-bottom:1px solid var(--grey-mid);transition:background .1s}
-  tbody tr:nth-child(even){background:#f8fafc}
-  tbody tr:nth-child(odd){background:white}
+  tbody tr:nth-child(even){background:#f8fafc}tbody tr:nth-child(odd){background:white}
   tbody tr:hover{background:#e3f2fd!important}
   tbody tr.present-row td:first-child{border-left:3px solid var(--green)}
   tbody tr.absent-row td:first-child{border-left:3px solid var(--accent)}
   tbody td{padding:8px 12px;vertical-align:middle}
   .day-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
-  .day-wed{background:#e8f5e9;color:#2e7d32}
-  .day-thu{background:#e3f2fd;color:#1565c0}
-  .day-fri{background:#fff8e1;color:#f57f17}
+  .day-wed{background:#e8f5e9;color:#2e7d32}.day-thu{background:#e3f2fd;color:#1565c0}.day-fri{background:#fff8e1;color:#f57f17}
   .time-cell{font-weight:600;font-size:13px;color:var(--navy);white-space:nowrap}
   .location-cell{max-width:200px;font-size:11px;color:var(--text-soft);line-height:1.4}
-  .person-name{font-weight:600;color:var(--text)}
-  .person-company{font-size:11px;color:var(--text-soft)}
+  .person-name{font-weight:600;color:var(--text)}.person-company{font-size:11px;color:var(--text-soft)}
   .presence-toggle{display:flex;gap:4px;align-items:center;justify-content:center}
-  .toggle-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--grey-mid);background:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+  .toggle-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--grey-mid);background:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .toggle-btn:hover{transform:scale(1.15)}
   .toggle-btn.active-present{background:var(--green);border-color:var(--green);color:white}
   .toggle-btn.active-absent{background:var(--accent);border-color:var(--accent);color:white}
   .note-input{border:none;background:transparent;width:100%;font-size:12px;color:var(--text-soft);outline:none;padding:2px 4px;border-radius:4px;font-family:inherit}
-  .note-input:hover{background:var(--grey-lt)}
-  .note-input:focus{background:white;border:1px solid var(--blue-lt)}
+  .note-input:hover{background:var(--grey-lt)}.note-input:focus{background:white;border:1px solid var(--blue-lt)}
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.7);z-index:200;align-items:center;justify-content:center}
   .modal-overlay.open{display:flex}
   .modal{background:white;border-radius:12px;padding:32px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-  .modal h2{font-size:18px;margin-bottom:8px;color:var(--navy)}
-  .modal p{color:var(--text-soft);margin-bottom:20px;line-height:1.6}
+  .modal h2{font-size:18px;margin-bottom:8px;color:var(--navy)}.modal p{color:var(--text-soft);margin-bottom:20px;line-height:1.6}
   .diff-summary{background:var(--surface);border-radius:8px;padding:16px;margin-bottom:20px}
-  .diff-line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
-  .diff-line+.diff-line{border-top:1px solid var(--grey-mid)}
+  .diff-line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.diff-line+.diff-line{border-top:1px solid var(--grey-mid)}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
   .loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.85);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:white}
   .loading-overlay.show{display:flex}
   .spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .loading-text{font-size:14px;opacity:.9}
-  .loading-sub{font-size:12px;opacity:.6}
+  .loading-text{font-size:14px;opacity:.9}.loading-sub{font-size:12px;opacity:.6}
   .empty-state{text-align:center;padding:64px 32px;color:var(--text-soft)}
 </style>
 </head>
@@ -160,7 +143,7 @@
     </div>
   </div>
   <div class="toolbar">
-    <div class="filter-tabs" id="day-tabs">
+    <div class="filter-tabs">
       <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous</button>
       <button class="filter-tab" data-day="Mer" onclick="setDayFilter(this)">Mer 17/06</button>
       <button class="filter-tab" data-day="Jeu" onclick="setDayFilter(this)">Jeu 18/06</button>
@@ -180,19 +163,17 @@
   </div>
   <div class="table-wrapper">
     <table>
-      <thead>
-        <tr>
-          <th onclick="sortBy('day')">Jour ↕</th>
-          <th onclick="sortBy('time')">Heure ↕</th>
-          <th onclick="sortBy('location')">Lieu ↕</th>
-          <th onclick="sortBy('host')">Hôte ↕</th>
-          <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
-          <th onclick="sortBy('guest')">Invité(e) ↕</th>
-          <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
-          <th style="text-align:center;min-width:90px">Présence</th>
-          <th style="min-width:140px">Notes</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th onclick="sortBy('day')">Jour ↕</th>
+        <th onclick="sortBy('time')">Heure ↕</th>
+        <th onclick="sortBy('location')">Lieu ↕</th>
+        <th onclick="sortBy('host')">Hôte ↕</th>
+        <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
+        <th onclick="sortBy('guest')">Invité(e) ↕</th>
+        <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
+        <th style="text-align:center;min-width:90px">Présence</th>
+        <th style="min-width:140px">Notes</th>
+      </tr></thead>
       <tbody id="table-body"></tbody>
     </table>
     <div class="empty-state" id="empty-state" style="display:none">
@@ -208,243 +189,234 @@ let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterSearch='';
 
-// ─────────────────────────────────────────────────────────────
-//  PDF PARSER  — based on observed column structure:
-//  x≈72  → LEFT  column  (Location parts)
-//  x≈177 → MID   column  (Host name / company)
-//  x≈368 → RIGHT column  (Guest name / company)
-//  Page width ≈ 595 pt
-//  Split thresholds: LEFT < 150, MID 150-280, RIGHT > 280
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  PDF PARSER
+//
+//  From the debug output, each PDF page has this structure:
+//
+//  y=700  "Schedule for Wed, Jun 17 10:30"          x≈72
+//  y=669  "Location | Host | Guest(s)"              x≈72,141,332
+//  y=647  "Business | Emma LAZZERI | Etienne Savin" x≈72,177,368
+//  y=632  "France - 3G13 | HORNSWAGGLE | Business France" x≈72,177,368
+//  y=617  "-"                                        x≈72
+//  y=602  "Hornswaggle"                              x≈72
+//  y=587  "French | Françoise Nauton-Inglis | Bianca Fraga"  x≈72,177,368
+//  y=572  "Companies | Juliia | Farmácias São João"  x≈72,177,368
+//  ...
+//
+//  So the pattern is:
+//  - LEFT col  (x < 150): location words  
+//  - MID col   (150 ≤ x < 290): host name then company
+//  - RIGHT col (x ≥ 290): guest name then company
+//
+//  A meeting = rows where MID col has a person name.
+//  Location accumulates from LEFT col across consecutive rows
+//  until the next meeting or schedule header.
+//
+//  KEY INSIGHT: rows come in pairs:
+//    Row N:   left="Business"  mid="Emma LAZZERI"        right="Etienne Savin"
+//    Row N+1: left="France-3G13" mid="HORNSWAGGLE"       right="Business France"
+//  So mid[0]=hostName, mid[1]=hostCompany, right[0]=guestName, right[1]=guestCompany
+// ═══════════════════════════════════════════════════════════════
+
 async function parsePDFFile(file) {
   showLoading('Ouverture du PDF…');
   const ab  = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
 
-  const DAY_MAP  = { Wed:'Mer', Thu:'Jeu', Fri:'Ven' };
-  const DATE_MAP = { Wed:'17/06', Thu:'18/06', Fri:'19/06' };
+  const DAY_MAP = { Wed:'Mer', Thu:'Jeu', Fri:'Ven' };
 
-  // Accumulate rows across all pages
-  // A "raw row" = { y, left:[], mid:[], right:[] }
-  const allPageRows = [];   // flat list, in page/y order
-  let schedHeaders  = [];   // [{insertBefore: rowIndex, day, time}]
+  const result = [];
+  let curDay = null, curTime = null;
 
   for (let pn = 1; pn <= pdf.numPages; pn++) {
-    updateLoading(`Page ${pn} / ${pdf.numPages}…`, `${meetings.length} RDV extraits`);
+    updateLoading(`Page ${pn} / ${pdf.numPages}`, `${result.length} RDV extraits`);
 
     const page = await pdf.getPage(pn);
     const tc   = await page.getTextContent();
 
-    // Collect items
+    // 1. Collect all text items with coordinates
     const items = tc.items
       .filter(i => i.str && i.str.trim())
-      .map(i => ({ x: i.transform[4], y: Math.round(i.transform[5]), text: i.str.trim() }));
+      .map(i => ({
+        x: Math.round(i.transform[4]),
+        y: Math.round(i.transform[5]),
+        text: i.str.trim()
+      }));
 
-    // Group by Y
-    const byY = {};
-    items.forEach(i => {
-      if (!byY[i.y]) byY[i.y] = [];
-      byY[i.y].push(i);
+    // 2. Group by Y coordinate (same line = within 2pt tolerance)
+    //    Use a merge strategy: items within 2pt of each other are on same line
+    const lineMap = {};
+    items.forEach(item => {
+      // Find existing Y key within ±2
+      let key = item.y;
+      for (const k of Object.keys(lineMap)) {
+        if (Math.abs(parseInt(k) - item.y) <= 2) { key = parseInt(k); break; }
+      }
+      if (!lineMap[key]) lineMap[key] = [];
+      lineMap[key].push(item);
     });
 
-    // Sort top→bottom
-    const ys = Object.keys(byY).map(Number).sort((a,b) => b-a);
+    // 3. Sort lines top-to-bottom, items left-to-right within each line
+    const lines = Object.entries(lineMap)
+      .sort(([ya],[yb]) => parseInt(yb) - parseInt(ya))
+      .map(([y, its]) => {
+        its.sort((a,b) => a.x - b.x);
+        return {
+          y: parseInt(y),
+          items: its,
+          // Column split — from debug: left≈72, mid≈177, right≈368
+          // Threshold: x<150 = left, 150≤x<290 = mid, x≥290 = right
+          left:  its.filter(i => i.x < 150).map(i=>i.text).join(' ').trim(),
+          mid:   its.filter(i => i.x >= 150 && i.x < 290).map(i=>i.text).join(' ').trim(),
+          right: its.filter(i => i.x >= 290).map(i=>i.text).join(' ').trim(),
+          full:  its.map(i=>i.text).join(' ').trim()
+        };
+      });
 
-    ys.forEach(y => {
-      const row = byY[y];
-      row.sort((a,b) => a.x - b.x);
+    // 4. Walk lines and extract meetings
+    //
+    //    State machine:
+    //    - When we see "Schedule for ...", update curDay/curTime
+    //    - Accumulate a "current meeting buffer":
+    //        locParts[], midParts[], rightParts[]
+    //    - A new meeting starts when LEFT col has a location keyword
+    //    - Flush the previous meeting buffer on each new location start
 
-      const full = row.map(i=>i.text).join(' ');
+    let locParts=[], midParts=[], rightParts=[];
 
-      // Detect schedule header
-      const sh = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-      if (sh) {
-        schedHeaders.push({
-          insertBefore: allPageRows.length,
-          day:  DAY_MAP[sh[1]]  || sh[1],
-          time: sh[2]
-        });
-        return;
-      }
+    const flushMeeting = () => {
+      if (!midParts.length || !rightParts.length || !curDay) return;
 
-      // Skip pure metadata lines
-      if (isMeta(full)) return;
+      // Skip initial-only entries (e.g. "PC", "MR")
+      const skipInit = arr => {
+        let i = 0;
+        while (i < arr.length && /^[A-Z]{1,3}$/.test(arr[i].trim())) i++;
+        return arr.slice(i);
+      };
 
-      // Split into columns using X thresholds derived from debug output:
-      // LEFT:  x < 150   (location column, x≈72)
-      // MID:   150 ≤ x < 280  (host column, x≈177)
-      // RIGHT: x ≥ 280   (guest column, x≈368)
-      const left  = row.filter(i => i.x < 150) .map(i=>i.text).join(' ').trim();
-      const mid   = row.filter(i => i.x >= 150 && i.x < 280).map(i=>i.text).join(' ').trim();
-      const right = row.filter(i => i.x >= 280) .map(i=>i.text).join(' ').trim();
+      const mids   = skipInit(midParts.filter(s=>s && !isMeta(s)));
+      const rights = skipInit(rightParts.filter(s=>s && !isMeta(s)));
 
-      if (left || mid || right) {
-        allPageRows.push({ y, left, mid, right, full });
-      }
-    });
-  }
+      const hostName    = mids[0]   || '';
+      const hostCompany = mids[1]   || '';
+      const guestName   = rights[0] || '';
+      const guestCo     = rights[1] || '';
 
-  // ── Now parse meetings from allPageRows ──
-  // Strategy:
-  //   - Walk rows in order
-  //   - Track current day/time from schedHeaders
-  //   - When LEFT column has a location keyword → start new meeting block
-  //   - A meeting block accumulates LEFT/MID/RIGHT over consecutive rows
-  //     until LEFT changes to a new location or new schedule header
+      const location = buildLoc(locParts.filter(s=>s && !isMeta(s)));
 
-  const result = [];
-  let curDay = null, curTime = null;
-  let shIdx  = 0; // schedHeaders pointer
-
-  // Build a schedule-annotated row list
-  // Insert sentinel objects for schedule changes
-  const annotated = [];
-  schedHeaders.forEach((sh, i) => {
-    const next = schedHeaders[i+1];
-    annotated.push({ type:'header', day:sh.day, time:sh.time });
-    const slice = allPageRows.slice(
-      sh.insertBefore,
-      next ? next.insertBefore : allPageRows.length
-    );
-    slice.forEach(r => annotated.push({ type:'row', ...r }));
-  });
-  // Also prepend rows before the first header (usually cover page — ignore)
-
-  let i = 0;
-  while (i < annotated.length) {
-    const item = annotated[i];
-
-    if (item.type === 'header') {
-      curDay  = item.day;
-      curTime = item.time;
-      i++; continue;
-    }
-
-    if (!curDay) { i++; continue; }
-
-    const row = item;
-
-    // Start of a new meeting: LEFT col has a location keyword
-    if (isLocStart(row.left)) {
-      // Collect all lines belonging to this meeting block
-      // until: next location start, next header, or empty left for too long
-      const leftParts  = row.left ? [row.left]  : [];
-      const midParts   = row.mid  ? [row.mid]   : [];
-      const rightParts = row.right? [row.right] : [];
-
-      let j = i + 1;
-      let emptyLeftStreak = 0;
-      while (j < annotated.length) {
-        const next = annotated[j];
-        if (next.type === 'header') break;
-        if (isLocStart(next.left)) break;  // new meeting starts
-
-        if (next.left)  { leftParts.push(next.left);   emptyLeftStreak = 0; }
-        else            { emptyLeftStreak++; }
-        if (next.mid)   midParts.push(next.mid);
-        if (next.right) rightParts.push(next.right);
-
-        // Stop collecting if left column has been empty for 4+ rows
-        // and we already have host+guest data
-        if (emptyLeftStreak >= 4 && midParts.length >= 2 && rightParts.length >= 2) break;
-        j++;
-      }
-      i = j;
-
-      const location = buildLocation(leftParts);
-      const host     = extractPerson(midParts);
-      const guest    = extractPerson(rightParts);
-
-      if (host.name && guest.name && location) {
-        const id = `${curDay}|${curTime}|${location}|${host.name}|${guest.name}`;
+      if (hostName && guestName && location) {
+        const id = `${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
         result.push({
           id, day:curDay, time:curTime, location,
-          host:host.name, hostCompany:host.company,
-          guest:guest.name, guestCompany:guest.company,
+          host:clean(hostName), hostCompany:clean(hostCompany),
+          guest:clean(guestName), guestCompany:clean(guestCo),
           presence:'unknown', note:''
         });
       }
-      continue;
+
+      locParts=[]; midParts=[]; rightParts=[];
+    };
+
+    for (const line of lines) {
+      const { left, mid, right, full } = line;
+
+      // Schedule header
+      const sh = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
+      if (sh) {
+        flushMeeting();
+        curDay  = DAY_MAP[sh[1]] || sh[1];
+        curTime = sh[2];
+        continue;
+      }
+
+      // Skip metadata-only lines
+      if (isMeta(full)) continue;
+
+      // Skip column header row
+      if (full.includes('Location') && full.includes('Host') && full.includes('Guest')) continue;
+
+      // New meeting starts when LEFT col has a location keyword
+      if (left && isLocKeyword(left)) {
+        flushMeeting();
+      }
+
+      // Accumulate columns
+      if (left)  locParts.push(left);
+      if (mid)   midParts.push(mid);
+      if (right) rightParts.push(right);
     }
 
-    i++;
+    // Flush last meeting on the page
+    flushMeeting();
   }
 
   hideLoading();
   return result;
 }
 
-// ─── Helpers ───────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────
 
 function isMeta(s) {
   if (!s) return true;
-  return s.match(/^\d{2}\.\d{2}\.\d{4}/) ||
-         s.match(/^\d+\s*\/\s*\d+$/) ||
-         s.includes('Business Meetings @') ||
-         s.match(/17 June.*2026|18 June.*2026|19 June.*2026/) ||
-         s === 'Location' || s === 'Host' || s === 'Guest(s)';
+  return (
+    /^\d{2}\.\d{2}\.\d{4}/.test(s) ||
+    /^\d+\s*\/\s*\d+$/.test(s) ||
+    s.includes('Business Meetings @') ||
+    /\d+ June, 2026/.test(s) ||
+    /17 June.*20 June/.test(s) ||
+    s === 'Location' || s === 'Host' || s === 'Guest(s)'
+  );
 }
 
-function isLocStart(s) {
-  if (!s) return false;
-  return /^Business\s+France/i.test(s) ||
-         /^French\s+Companies/i.test(s) ||
-         /^International\s+Buyers/i.test(s);
+function isLocKeyword(s) {
+  return (
+    /^Business(\s+France)?$/i.test(s) ||
+    /^French(\s+Companies)?$/i.test(s) ||
+    /^International(\s+Buyers)?$/i.test(s)
+  );
 }
 
-function buildLocation(parts) {
+function buildLoc(parts) {
   return parts.join(' ')
     .replace(/\s+/g,' ')
     .replace(/Business\s+France\s*-\s*3G13\s*-?\s*/i,'BF 3G13 — ')
     .replace(/French\s+Companies\s+Booth\s*-?\s*/i,'Stand ')
-    .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*-?\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*-?\s*/i,'Lounge Hall 7.2 ')
+    .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*[-–]?\s*/i,'Lounge Hall 7.2 ')
     .replace(/\s+/g,' ').trim();
 }
 
-function extractPerson(parts) {
-  // Filter junk
-  const clean = parts
-    .map(s => s.replace(/[⯑◇♦]/g,'').trim())
-    .filter(s => s && !isMeta(s));
-
-  if (!clean.length) return { name:'', company:'' };
-
-  // Skip lines that are pure 1-3 letter initials (like "PC", "MR", "GH")
-  let idx = 0;
-  while (idx < clean.length && /^[A-Z]{1,3}$/.test(clean[idx])) idx++;
-
-  const name    = clean[idx]   || '';
-  const company = clean[idx+1] || '';
-  return { name:name.trim(), company:company.trim() };
+function clean(s) {
+  return String(s||'').replace(/[⯑◇♦]/g,'').replace(/\s+/g,' ').trim();
 }
 
-// ─── File handling ─────────────────────────────────────────
+// ─── File handling ────────────────────────────────────────────
 
 async function handleFile(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], false);
-  input.value = '';
+  input.value='';
 }
 async function handleReimport(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], true);
-  input.value = '';
+  input.value='';
 }
 async function processNewPDF(file, isReimport) {
   try {
     const parsed = await parsePDFFile(file);
     if (!parsed.length) {
-      alert('Aucun rendez-vous trouvé.\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".');
+      alert(`Aucun rendez-vous trouvé dans "${file.name}".\n\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".`);
       return;
     }
     if (isReimport && meetings.length > 0) {
-      const existingIds = new Set(meetings.map(m=>m.id));
-      const newIds      = new Set(parsed.map(m=>m.id));
+      const eIds = new Set(meetings.map(m=>m.id));
+      const nIds = new Set(parsed.map(m=>m.id));
       pendingImport = {
         parsed,
-        added:   parsed.filter(m=>!existingIds.has(m.id)),
-        removed: meetings.filter(m=>!newIds.has(m.id)),
-        kept:    parsed.filter(m=>existingIds.has(m.id))
+        added:   parsed.filter(m=>!eIds.has(m.id)),
+        removed: meetings.filter(m=>!nIds.has(m.id)),
+        kept:    parsed.filter(m=>eIds.has(m.id))
       };
       showDiffModal();
     } else {
@@ -454,80 +426,70 @@ async function processNewPDF(file, isReimport) {
   } catch(e) {
     hideLoading();
     console.error(e);
-    alert('Erreur : ' + e.message);
+    alert('Erreur : '+e.message);
   }
 }
 
 function showDiffModal() {
-  const { added, removed, kept } = pendingImport;
-  document.getElementById('diff-summary').innerHTML = `
+  const {added,removed,kept}=pendingImport;
+  document.getElementById('diff-summary').innerHTML=`
     <div class="diff-line"><span>RDV maintenus</span><strong>${kept.length}</strong></div>
     <div class="diff-line" style="color:#2e7d32"><span>➕ Nouveaux RDV</span><strong>${added.length}</strong></div>
     <div class="diff-line" style="color:#c62828"><span>➖ RDV supprimés</span><strong>${removed.length}</strong></div>
     <div class="diff-line"><span>✅ Coches conservées</span><strong>${meetings.filter(m=>m.presence!=='unknown').length}</strong></div>`;
   document.getElementById('diff-modal').classList.add('open');
 }
-function closeDiffModal() {
-  document.getElementById('diff-modal').classList.remove('open');
-  pendingImport = null;
-}
-function applyImport() {
-  const map = {};
-  meetings.forEach(m => map[m.id] = m);
-  meetings = pendingImport.parsed.map(m => {
-    const ex = map[m.id];
-    return ex ? { ...m, presence:ex.presence, note:ex.note } : m;
-  });
-  closeDiffModal();
-  initApp();
+function closeDiffModal(){document.getElementById('diff-modal').classList.remove('open');pendingImport=null;}
+function applyImport(){
+  const map={};
+  meetings.forEach(m=>map[m.id]=m);
+  meetings=pendingImport.parsed.map(m=>{const ex=map[m.id];return ex?{...m,presence:ex.presence,note:ex.note}:m;});
+  closeDiffModal();initApp();
 }
 
-// ─── App init & render ──────────────────────────────────────
+// ─── App ──────────────────────────────────────────────────────
 
-function initApp() {
-  document.getElementById('upload-zone').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  const times = [...new Set(meetings.map(m=>m.time))].sort();
-  const sel = document.getElementById('time-filter');
-  sel.innerHTML = '<option value="">Tous horaires</option>';
-  times.forEach(t => { const o=document.createElement('option'); o.value=o.textContent=t; sel.appendChild(o); });
+function initApp(){
+  document.getElementById('upload-zone').style.display='none';
+  document.getElementById('app').style.display='block';
+  const times=[...new Set(meetings.map(m=>m.time))].sort();
+  const sel=document.getElementById('time-filter');
+  sel.innerHTML='<option value="">Tous horaires</option>';
+  times.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;sel.appendChild(o);});
   render();
 }
 
-function render() {
+function render(){
   updateStats();
-  const filtered = getFiltered();
-  renderTable(filtered);
-  document.getElementById('row-count').textContent = `${filtered.length} ligne${filtered.length>1?'s':''}`;
+  const f=getFiltered();
+  renderTable(f);
+  document.getElementById('row-count').textContent=`${f.length} ligne${f.length>1?'s':''}`;
 }
 
-function getFiltered() {
-  let d = [...meetings];
-  if (filterDay!=='all')      d = d.filter(m=>m.day===filterDay);
-  if (filterPresence!=='all') d = d.filter(m=>m.presence===filterPresence);
-  if (filterTime)             d = d.filter(m=>m.time===filterTime);
-  if (filterSearch) {
-    const q = filterSearch.toLowerCase();
-    d = d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany,m.location].some(s=>s.toLowerCase().includes(q)));
+function getFiltered(){
+  let d=[...meetings];
+  if(filterDay!=='all')      d=d.filter(m=>m.day===filterDay);
+  if(filterPresence!=='all') d=d.filter(m=>m.presence===filterPresence);
+  if(filterTime)             d=d.filter(m=>m.time===filterTime);
+  if(filterSearch){
+    const q=filterSearch.toLowerCase();
+    d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany,m.location].some(s=>s.toLowerCase().includes(q)));
   }
-  d.sort((a,b)=>{
-    const va=a[sortCol]||'', vb=b[sortCol]||'';
-    return va<vb?-sortDir:va>vb?sortDir:0;
-  });
+  d.sort((a,b)=>{const va=a[sortCol]||'',vb=b[sortCol]||'';return va<vb?-sortDir:va>vb?sortDir:0;});
   return d;
 }
 
-function renderTable(data) {
-  const tbody = document.getElementById('table-body');
-  const empty = document.getElementById('empty-state');
-  if (!data.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display = 'none';
-  const dc = { Mer:'day-wed', Jeu:'day-thu', Ven:'day-fri' };
-  const dl = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
-  tbody.innerHTML = data.map(m => {
-    const pc = m.presence==='present'?'present-row':m.presence==='absent'?'absent-row':'';
-    const id = esc(m.id);
-    return `<tr class="${pc}">
+function renderTable(data){
+  const tbody=document.getElementById('table-body');
+  const empty=document.getElementById('empty-state');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const dc={Mer:'day-wed',Jeu:'day-thu',Ven:'day-fri'};
+  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+  tbody.innerHTML=data.map(m=>{
+    const pc=m.presence==='present'?'present-row':m.presence==='absent'?'absent-row':'';
+    const id=esc(m.id);
+    return`<tr class="${pc}">
       <td><span class="day-badge ${dc[m.day]||''}">${dl[m.day]||m.day}</span></td>
       <td class="time-cell">${m.time}</td>
       <td class="location-cell">${esc(m.location)}</td>
@@ -544,10 +506,10 @@ function renderTable(data) {
   }).join('');
 }
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-function updateStats() {
-  const t=meetings.length, p=meetings.filter(m=>m.presence==='present').length, a=meetings.filter(m=>m.presence==='absent').length;
+function updateStats(){
+  const t=meetings.length,p=meetings.filter(m=>m.presence==='present').length,a=meetings.filter(m=>m.presence==='absent').length;
   document.getElementById('stat-total').textContent=t;
   document.getElementById('stat-present').textContent=p;
   document.getElementById('stat-absent').textContent=a;
@@ -556,17 +518,17 @@ function updateStats() {
   document.getElementById('bar-absent').style.width=(t?a/t*100:0)+'%';
 }
 
-function togglePresence(id,val){ const m=meetings.find(m=>m.id===id); if(m){m.presence=m.presence===val?'unknown':val; render();} }
-function updateNote(id,val){ const m=meetings.find(m=>m.id===id); if(m) m.note=val; }
-function setDayFilter(btn){ filterDay=btn.dataset.day; document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
-function setPresenceFilter(btn){ filterPresence=btn.dataset.presence; document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
-function applyFilters(){ filterSearch=document.getElementById('search-input').value; filterTime=document.getElementById('time-filter').value; render(); }
-function sortBy(col){ if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=1;} render(); }
+function togglePresence(id,val){const m=meetings.find(m=>m.id===id);if(m){m.presence=m.presence===val?'unknown':val;render();}}
+function updateNote(id,val){const m=meetings.find(m=>m.id===id);if(m)m.note=val;}
+function setDayFilter(btn){filterDay=btn.dataset.day;document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function setPresenceFilter(btn){filterPresence=btn.dataset.presence;document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function applyFilters(){filterSearch=document.getElementById('search-input').value;filterTime=document.getElementById('time-filter').value;render();}
+function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
 
-function exportExcel() {
-  const wb = XLSX.utils.book_new();
-  const pl = { present:'✓ Présent', absent:'✗ Absent', unknown:'?' };
-  const dl = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
+  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
   const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
   meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,m.guest,m.guestCompany,pl[m.presence]||'?',m.note]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
@@ -575,7 +537,7 @@ function exportExcel() {
   const sr=[['Jour','Total','Présents','Absents','Non renseigné','Taux']];
   ['Mer','Jeu','Ven'].forEach(d=>{
     const dm=meetings.filter(m=>m.day===d);
-    const p=dm.filter(m=>m.presence==='present').length, a=dm.filter(m=>m.presence==='absent').length;
+    const p=dm.filter(m=>m.presence==='present').length,a=dm.filter(m=>m.presence==='absent').length;
     sr.push([dl[d],dm.length,p,a,dm.length-p-a,dm.length?((p/dm.length)*100).toFixed(1)+'%':'-']);
   });
   const t=meetings.length,tp=meetings.filter(m=>m.presence==='present').length,ta=meetings.filter(m=>m.presence==='absent').length;
@@ -586,9 +548,9 @@ function exportExcel() {
   XLSX.writeFile(wb,`Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-function showLoading(msg,sub){ document.getElementById('loading-text').textContent=msg||'Chargement…'; document.getElementById('loading-sub').textContent=sub||''; document.getElementById('loading').classList.add('show'); }
-function updateLoading(msg,sub){ document.getElementById('loading-text').textContent=msg; document.getElementById('loading-sub').textContent=sub||''; }
-function hideLoading(){ document.getElementById('loading').classList.remove('show'); }
+function showLoading(msg,sub){document.getElementById('loading-text').textContent=msg||'';document.getElementById('loading-sub').textContent=sub||'';document.getElementById('loading').classList.add('show');}
+function updateLoading(msg,sub){document.getElementById('loading-text').textContent=msg;document.getElementById('loading-sub').textContent=sub||'';}
+function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
 const dz=document.getElementById('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
