@@ -8,181 +8,98 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --navy: #0d1b2a; --navy2: #1a2e45; --blue: #1565c0; --blue-lt: #1976d2;
-    --accent: #e53935; --gold: #f9a825; --green: #2e7d32; --green-lt: #e8f5e9;
-    --grey: #90a4ae; --grey-lt: #eceff1; --grey-mid: #cfd8dc; --white: #ffffff;
-    --text: #1a2e45; --text-soft: #546e7a; --surface: #f5f7fa;
-    --shadow: 0 2px 8px rgba(13,27,42,0.10);
+    --navy:#0d1b2a;--navy2:#1a2e45;--blue:#1565c0;--blue-lt:#1976d2;
+    --accent:#e53935;--gold:#f9a825;--green:#2e7d32;
+    --grey:#90a4ae;--grey-lt:#eceff1;--grey-mid:#cfd8dc;
+    --text:#1a2e45;--text-soft:#546e7a;--surface:#f5f7fa;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--surface); color: var(--text); font-size: 13px; }
-
-  header {
-    background: var(--navy); color: white; padding: 0 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 56px; position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-  }
-  .header-left { display: flex; align-items: center; gap: 16px; }
-  .logo-mark {
-    width: 32px; height: 32px; border-radius: 4px; flex-shrink: 0;
-    background: linear-gradient(135deg, #002395 33%, #ffffff 33%, #ffffff 66%, #ed2939 66%);
-  }
-  header h1 { font-size: 15px; font-weight: 600; }
-  header h1 span { color: var(--gold); font-weight: 400; font-size: 12px; margin-left: 8px; opacity: 0.9; }
-  .header-actions { display: flex; gap: 8px; align-items: center; }
-  .btn {
-    padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer;
-    font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
-    transition: all 0.15s;
-  }
-  .btn-primary { background: var(--blue-lt); color: white; }
-  .btn-primary:hover { background: var(--blue); }
-  .btn-outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); }
-  .btn-outline:hover { background: rgba(255,255,255,0.1); }
-  .btn-success { background: var(--green); color: white; }
-  .btn-success:hover { background: #1b5e20; }
-
-  #upload-zone {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: calc(100vh - 56px); gap: 24px;
-  }
-  .upload-card {
-    background: white; border-radius: 16px; padding: 56px 64px;
-    box-shadow: var(--shadow); text-align: center; max-width: 480px;
-    border: 2px dashed var(--grey-mid); transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .upload-card.dragover { border-color: var(--blue-lt); box-shadow: 0 0 0 4px rgba(21,101,192,0.1); }
-  .upload-icon { font-size: 48px; margin-bottom: 16px; }
-  .upload-card h2 { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .upload-card p { color: var(--text-soft); line-height: 1.6; margin-bottom: 24px; }
-  .upload-label {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--blue-lt); color: white; padding: 12px 24px;
-    border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;
-    transition: background 0.15s;
-  }
-  .upload-label:hover { background: var(--blue); }
-  .upload-hint { color: var(--grey); font-size: 11px; margin-top: 12px; }
-
-  #app { display: none; }
-
-  .stats-bar {
-    display: flex; gap: 16px; padding: 10px 20px;
-    background: var(--navy2); color: white; flex-wrap: wrap; align-items: center;
-  }
-  .stat-item { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
-  .stat-num { font-size: 20px; font-weight: 700; line-height: 1; }
-  .stat-label { font-size: 10px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
-  .stat-item.present .stat-num { color: #81c784; }
-  .stat-item.absent .stat-num { color: #ef9a9a; }
-  .stat-item.unknown .stat-num { color: #fff59d; }
-  .presence-bar { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
-  .presence-bar-label { font-size: 10px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
-  .presence-bar-track { height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; display: flex; }
-  .bar-present { background: #81c784; transition: width 0.4s; }
-  .bar-absent { background: #ef9a9a; transition: width 0.4s; }
-
-  .toolbar {
-    background: white; border-bottom: 1px solid var(--grey-mid);
-    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .toolbar-sep { width: 1px; height: 24px; background: var(--grey-mid); }
-  .filter-tabs { display: flex; gap: 2px; }
-  .filter-tab {
-    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--grey-mid);
-    background: white; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-soft);
-    transition: all 0.15s;
-  }
-  .filter-tab.active { background: var(--navy); color: white; border-color: var(--navy); }
-  .filter-tab:hover:not(.active) { background: var(--grey-lt); }
-  input[type=search], select {
-    padding: 7px 12px; border-radius: 6px; border: 1px solid var(--grey-mid);
-    font-size: 12px; color: var(--text); background: white; outline: none;
-  }
-  input[type=search]:focus, select:focus { border-color: var(--blue-lt); }
-  input[type=search] { width: 220px; }
-
-  .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 230px); }
-  table { width: 100%; border-collapse: collapse; }
-  thead th {
-    position: sticky; top: 0; z-index: 10; background: var(--navy); color: white;
-    padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600;
-    letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
-    cursor: pointer; user-select: none;
-  }
-  thead th:hover { background: var(--navy2); }
-  tbody tr { border-bottom: 1px solid var(--grey-mid); transition: background 0.1s; }
-  tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody tr:nth-child(odd) { background: white; }
-  tbody tr:hover { background: #e3f2fd !important; }
-  tbody tr.present-row td:first-child { border-left: 3px solid var(--green); }
-  tbody tr.absent-row td:first-child { border-left: 3px solid var(--accent); }
-  tbody td { padding: 8px 12px; vertical-align: middle; }
-
-  .day-badge {
-    display: inline-block; padding: 2px 8px; border-radius: 10px;
-    font-size: 10px; font-weight: 700; white-space: nowrap;
-  }
-  .day-wed { background: #e8f5e9; color: #2e7d32; }
-  .day-thu { background: #e3f2fd; color: #1565c0; }
-  .day-fri { background: #fff8e1; color: #f57f17; }
-
-  .time-cell { font-weight: 600; font-size: 13px; color: var(--navy); white-space: nowrap; }
-  .location-cell { max-width: 200px; font-size: 11px; color: var(--text-soft); line-height: 1.4; }
-  .person-name { font-weight: 600; color: var(--text); }
-  .person-company { font-size: 11px; color: var(--text-soft); }
-
-  .presence-toggle { display: flex; gap: 4px; align-items: center; justify-content: center; }
-  .toggle-btn {
-    width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--grey-mid);
-    background: white; cursor: pointer; font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s; flex-shrink: 0;
-  }
-  .toggle-btn:hover { transform: scale(1.15); }
-  .toggle-btn.active-present { background: var(--green); border-color: var(--green); color: white; }
-  .toggle-btn.active-absent { background: var(--accent); border-color: var(--accent); color: white; }
-
-  .note-input {
-    border: none; background: transparent; width: 100%; font-size: 12px;
-    color: var(--text-soft); outline: none; padding: 2px 4px; border-radius: 4px; font-family: inherit;
-  }
-  .note-input:hover { background: var(--grey-lt); }
-  .note-input:focus { background: white; border: 1px solid var(--blue-lt); }
-
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(13,27,42,0.7);
-    z-index: 200; align-items: center; justify-content: center;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: white; border-radius: 12px; padding: 32px; max-width: 520px; width: 90%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  }
-  .modal h2 { font-size: 18px; margin-bottom: 8px; color: var(--navy); }
-  .modal p { color: var(--text-soft); margin-bottom: 20px; line-height: 1.6; }
-  .diff-summary { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-  .diff-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
-  .diff-line + .diff-line { border-top: 1px solid var(--grey-mid); }
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-  .btn-cancel { background: var(--grey-lt); color: var(--text); }
-
-  .loading-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(13,27,42,0.85);
-    z-index: 300; align-items: center; justify-content: center; flex-direction: column;
-    gap: 16px; color: white;
-  }
-  .loading-overlay.show { display: flex; }
-  .spinner {
-    width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2);
-    border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 14px; opacity: 0.9; }
-  .loading-sub { font-size: 12px; opacity: 0.6; margin-top: -8px; }
-
-  .empty-state { text-align: center; padding: 64px 32px; color: var(--text-soft); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--surface);color:var(--text);font-size:13px}
+  header{background:var(--navy);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+  .header-left{display:flex;align-items:center;gap:16px}
+  .logo-mark{width:32px;height:32px;border-radius:4px;flex-shrink:0;background:linear-gradient(135deg,#002395 33%,#fff 33%,#fff 66%,#ed2939 66%)}
+  header h1{font-size:15px;font-weight:600}
+  header h1 span{color:var(--gold);font-weight:400;font-size:12px;margin-left:8px;opacity:.9}
+  .header-actions{display:flex;gap:8px;align-items:center}
+  .btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+  .btn-primary{background:var(--blue-lt);color:white}.btn-primary:hover{background:var(--blue)}
+  .btn-outline{background:transparent;color:white;border:1px solid rgba(255,255,255,.3)}.btn-outline:hover{background:rgba(255,255,255,.1)}
+  .btn-success{background:var(--green);color:white}.btn-success:hover{background:#1b5e20}
+  .btn-cancel{background:var(--grey-lt);color:var(--text)}
+  #upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
+  .upload-card{background:white;border-radius:16px;padding:56px 64px;box-shadow:0 2px 8px rgba(13,27,42,.1);text-align:center;max-width:480px;border:2px dashed var(--grey-mid);transition:border-color .2s}
+  .upload-card.dragover{border-color:var(--blue-lt)}
+  .upload-icon{font-size:48px;margin-bottom:16px}
+  .upload-card h2{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+  .upload-card p{color:var(--text-soft);line-height:1.6;margin-bottom:24px}
+  .upload-label{display:inline-flex;align-items:center;gap:8px;background:var(--blue-lt);color:white;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:background .15s}
+  .upload-label:hover{background:var(--blue)}
+  .upload-hint{color:var(--grey);font-size:11px;margin-top:12px}
+  #app{display:none}
+  .stats-bar{display:flex;gap:16px;padding:10px 20px;background:var(--navy2);color:white;flex-wrap:wrap;align-items:center}
+  .stat-item{display:flex;flex-direction:column;align-items:center;min-width:70px}
+  .stat-num{font-size:20px;font-weight:700;line-height:1}
+  .stat-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .stat-item.present .stat-num{color:#81c784}
+  .stat-item.absent .stat-num{color:#ef9a9a}
+  .stat-item.unknown .stat-num{color:#fff59d}
+  .presence-bar{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}
+  .presence-bar-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em}
+  .presence-bar-track{height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden;display:flex}
+  .bar-present{background:#81c784;transition:width .4s}
+  .bar-absent{background:#ef9a9a;transition:width .4s}
+  .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .toolbar-sep{width:1px;height:24px;background:var(--grey-mid)}
+  .filter-tabs{display:flex;gap:2px}
+  .filter-tab{padding:6px 14px;border-radius:6px;border:1px solid var(--grey-mid);background:white;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-soft);transition:all .15s}
+  .filter-tab.active{background:var(--navy);color:white;border-color:var(--navy)}
+  .filter-tab:hover:not(.active){background:var(--grey-lt)}
+  input[type=search],select{padding:7px 12px;border-radius:6px;border:1px solid var(--grey-mid);font-size:12px;color:var(--text);background:white;outline:none}
+  input[type=search]:focus,select:focus{border-color:var(--blue-lt)}
+  input[type=search]{width:220px}
+  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 230px)}
+  table{width:100%;border-collapse:collapse}
+  thead th{position:sticky;top:0;z-index:10;background:var(--navy);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
+  thead th:hover{background:var(--navy2)}
+  tbody tr{border-bottom:1px solid var(--grey-mid);transition:background .1s}
+  tbody tr:nth-child(even){background:#f8fafc}
+  tbody tr:nth-child(odd){background:white}
+  tbody tr:hover{background:#e3f2fd!important}
+  tbody tr.present-row td:first-child{border-left:3px solid var(--green)}
+  tbody tr.absent-row td:first-child{border-left:3px solid var(--accent)}
+  tbody td{padding:8px 12px;vertical-align:middle}
+  .day-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+  .day-wed{background:#e8f5e9;color:#2e7d32}
+  .day-thu{background:#e3f2fd;color:#1565c0}
+  .day-fri{background:#fff8e1;color:#f57f17}
+  .time-cell{font-weight:600;font-size:13px;color:var(--navy);white-space:nowrap}
+  .location-cell{max-width:200px;font-size:11px;color:var(--text-soft);line-height:1.4}
+  .person-name{font-weight:600;color:var(--text)}
+  .person-company{font-size:11px;color:var(--text-soft)}
+  .presence-toggle{display:flex;gap:4px;align-items:center;justify-content:center}
+  .toggle-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--grey-mid);background:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+  .toggle-btn:hover{transform:scale(1.15)}
+  .toggle-btn.active-present{background:var(--green);border-color:var(--green);color:white}
+  .toggle-btn.active-absent{background:var(--accent);border-color:var(--accent);color:white}
+  .note-input{border:none;background:transparent;width:100%;font-size:12px;color:var(--text-soft);outline:none;padding:2px 4px;border-radius:4px;font-family:inherit}
+  .note-input:hover{background:var(--grey-lt)}
+  .note-input:focus{background:white;border:1px solid var(--blue-lt)}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.7);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:white;border-radius:12px;padding:32px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal h2{font-size:18px;margin-bottom:8px;color:var(--navy)}
+  .modal p{color:var(--text-soft);margin-bottom:20px;line-height:1.6}
+  .diff-summary{background:var(--surface);border-radius:8px;padding:16px;margin-bottom:20px}
+  .diff-line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+  .diff-line+.diff-line{border-top:1px solid var(--grey-mid)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.85);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:white}
+  .loading-overlay.show{display:flex}
+  .spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:14px;opacity:.9}
+  .loading-sub{font-size:12px;opacity:.6}
+  .empty-state{text-align:center;padding:64px 32px;color:var(--text-soft)}
 </style>
 </head>
 <body>
@@ -196,7 +113,7 @@
 <div class="modal-overlay" id="diff-modal">
   <div class="modal">
     <h2>📋 Réimport détecté</h2>
-    <p>Voici les changements détectés. Les coches de présence existantes seront conservées.</p>
+    <p>Voici les changements. Les coches de présence existantes seront conservées.</p>
     <div class="diff-summary" id="diff-summary"></div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeDiffModal()">Annuler</button>
@@ -242,7 +159,6 @@
       </div>
     </div>
   </div>
-
   <div class="toolbar">
     <div class="filter-tabs" id="day-tabs">
       <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous</button>
@@ -262,9 +178,8 @@
     <select id="time-filter" onchange="applyFilters()"><option value="">Tous horaires</option></select>
     <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="row-count"></span>
   </div>
-
   <div class="table-wrapper">
-    <table id="main-table">
+    <table>
       <thead>
         <tr>
           <th onclick="sortBy('day')">Jour ↕</th>
@@ -281,271 +196,257 @@
       <tbody id="table-body"></tbody>
     </table>
     <div class="empty-state" id="empty-state" style="display:none">
-      <div style="font-size:32px">🔍</div>
-      <p>Aucun rendez-vous trouvé.</p>
+      <div style="font-size:32px">🔍</div><p>Aucun rendez-vous trouvé.</p>
     </div>
   </div>
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ── STATE ──
-let meetings = [];
-let pendingImport = null;
-let sortCol = 'time', sortDir = 1;
-let filterDay = 'all', filterPresence = 'all', filterTime = '', filterSearch = '';
+let meetings=[], pendingImport=null;
+let sortCol='time', sortDir=1;
+let filterDay='all', filterPresence='all', filterTime='', filterSearch='';
 
-// ── PDF PARSING — column-based approach ──
+// ─────────────────────────────────────────────────────────────
+//  PDF PARSER  — based on observed column structure:
+//  x≈72  → LEFT  column  (Location parts)
+//  x≈177 → MID   column  (Host name / company)
+//  x≈368 → RIGHT column  (Guest name / company)
+//  Page width ≈ 595 pt
+//  Split thresholds: LEFT < 150, MID 150-280, RIGHT > 280
+// ─────────────────────────────────────────────────────────────
 async function parsePDFFile(file) {
   showLoading('Ouverture du PDF…');
-  const ab = await file.arrayBuffer();
+  const ab  = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-  
-  const allMeetings = [];
-  let currentDay = null, currentTime = null;
-  
-  const DAY_MAP  = { Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven' };
-  const DATE_MAP = { Wed: '17/06', Thu: '18/06', Fri: '19/06' };
 
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    updateLoading(`Analyse page ${pageNum} / ${pdf.numPages}…`, `${allMeetings.length} RDV trouvés jusqu\'ici`);
-    
-    const page = await pdf.getPage(pageNum);
+  const DAY_MAP  = { Wed:'Mer', Thu:'Jeu', Fri:'Ven' };
+  const DATE_MAP = { Wed:'17/06', Thu:'18/06', Fri:'19/06' };
+
+  // Accumulate rows across all pages
+  // A "raw row" = { y, left:[], mid:[], right:[] }
+  const allPageRows = [];   // flat list, in page/y order
+  let schedHeaders  = [];   // [{insertBefore: rowIndex, day, time}]
+
+  for (let pn = 1; pn <= pdf.numPages; pn++) {
+    updateLoading(`Page ${pn} / ${pdf.numPages}…`, `${meetings.length} RDV extraits`);
+
+    const page = await pdf.getPage(pn);
     const tc   = await page.getTextContent();
-    const vp   = page.getViewport({ scale: 1 });
-    const pageW = vp.width;
 
-    // ── Collect items with normalized coords ──
+    // Collect items
     const items = tc.items
       .filter(i => i.str && i.str.trim())
-      .map(i => ({
-        x: i.transform[4],
-        y: Math.round(i.transform[5]),   // round to group items on same line
-        text: i.str.trim()
-      }));
+      .map(i => ({ x: i.transform[4], y: Math.round(i.transform[5]), text: i.str.trim() }));
 
-    // ── Group into lines by Y ──
-    const lineMap = {};
+    // Group by Y
+    const byY = {};
     items.forEach(i => {
-      if (!lineMap[i.y]) lineMap[i.y] = [];
-      lineMap[i.y].push(i);
+      if (!byY[i.y]) byY[i.y] = [];
+      byY[i.y].push(i);
     });
 
-    // Sort lines top→bottom (PDF y=0 is bottom, larger y = higher on page)
-    const lines = Object.values(lineMap)
-      .sort((a, b) => b[0].y - a[0].y)
-      .map(items => {
-        items.sort((a, b) => a.x - b.x);
-        return {
-          y: items[0].y,
-          items,
-          // Build column-split text
-          // Page is ~3 columns. Use x thresholds relative to page width.
-          // Col1 (Location): x < 33% of page
-          // Col2 (Host):    33-66%
-          // Col3 (Guest):   > 66%
-          left:   items.filter(i => i.x < pageW * 0.33).map(i => i.text).join(' '),
-          middle: items.filter(i => i.x >= pageW * 0.33 && i.x < pageW * 0.66).map(i => i.text).join(' '),
-          right:  items.filter(i => i.x >= pageW * 0.66).map(i => i.text).join(' '),
-          full:   items.map(i => i.text).join(' ')
-        };
-      });
+    // Sort top→bottom
+    const ys = Object.keys(byY).map(Number).sort((a,b) => b-a);
 
-    // ── Process lines ──
-    // We'll build a structured list of "row groups"
-    // A row group = one meeting = location + (host name + host company) + (guest name + guest company)
-    
-    // First pass: find schedule headers & meeting rows
-    let i = 0;
-    while (i < lines.length) {
-      const line = lines[i];
-      const full = line.full;
+    ys.forEach(y => {
+      const row = byY[y];
+      row.sort((a,b) => a.x - b.x);
 
-      // ── Schedule header ──
-      const schedMatch = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-      if (schedMatch) {
-        currentDay  = DAY_MAP[schedMatch[1]]  || schedMatch[1];
-        currentTime = schedMatch[2];
-        i++; continue;
+      const full = row.map(i=>i.text).join(' ');
+
+      // Detect schedule header
+      const sh = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
+      if (sh) {
+        schedHeaders.push({
+          insertBefore: allPageRows.length,
+          day:  DAY_MAP[sh[1]]  || sh[1],
+          time: sh[2]
+        });
+        return;
       }
 
-      if (!currentDay) { i++; continue; }
+      // Skip pure metadata lines
+      if (isMeta(full)) return;
 
-      // ── Skip metadata ──
-      if (isMetaLine(full)) { i++; continue; }
+      // Split into columns using X thresholds derived from debug output:
+      // LEFT:  x < 150   (location column, x≈72)
+      // MID:   150 ≤ x < 280  (host column, x≈177)
+      // RIGHT: x ≥ 280   (guest column, x≈368)
+      const left  = row.filter(i => i.x < 150) .map(i=>i.text).join(' ').trim();
+      const mid   = row.filter(i => i.x >= 150 && i.x < 280).map(i=>i.text).join(' ').trim();
+      const right = row.filter(i => i.x >= 280) .map(i=>i.text).join(' ').trim();
 
-      // ── Detect a location cell (left column) ──
-      if (isLocationStart(line.left || line.full)) {
-        // Accumulate location across consecutive lines where left col has content
-        let locationParts = [];
-        let j = i;
-        
-        while (j < lines.length && j < i + 6) {
-          const l = lines[j];
-          if (j > i && isMetaLine(l.full)) break;
-          if (j > i && isScheduleHeader(l.full)) break;
-          
-          const leftTxt = l.left.trim();
-          if (j === i) {
-            // First line: location starts here
-            locationParts.push(leftTxt || l.full);
-          } else {
-            // Continue location only if left col has content and it looks like location continuation
-            if (leftTxt && isLocationContinuation(leftTxt)) {
-              locationParts.push(leftTxt);
-            } else {
-              break;
-            }
-          }
-          j++;
-        }
-
-        const location = cleanLocation(locationParts.join(' '));
-
-        // Now extract host and guest from the same group of lines
-        // Collect middle and right column text from lines i..j
-        const midLines = [], rightLines = [];
-        for (let k = i; k < j; k++) {
-          if (lines[k].middle.trim()) midLines.push(lines[k].middle.trim());
-          if (lines[k].right.trim())  rightLines.push(lines[k].right.trim());
-        }
-        
-        // Also look ahead a few more lines for host/guest data
-        // (sometimes name/company are on separate lines beyond the location block)
-        let k = j;
-        while (k < lines.length && k < j + 8) {
-          const l = lines[k];
-          if (isMetaLine(l.full) || isScheduleHeader(l.full) || isLocationStart(l.left)) break;
-          if (l.left.trim() && !isLocationContinuation(l.left)) break;
-          if (l.middle.trim()) midLines.push(l.middle.trim());
-          if (l.right.trim())  rightLines.push(l.right.trim());
-          k++;
-        }
-        i = k;
-
-        // Parse host from midLines (first non-initial line = name, second = company)
-        const host  = extractPerson(midLines);
-        const guest = extractPerson(rightLines);
-
-        if (host.name && guest.name) {
-          const id = `${currentDay}|${currentTime}|${location}|${host.name}|${guest.name}`;
-          allMeetings.push({
-            id,
-            day: currentDay, time: currentTime,
-            location,
-            host: host.name, hostCompany: host.company,
-            guest: guest.name, guestCompany: guest.company,
-            presence: 'unknown', note: ''
-          });
-        }
-        continue;
+      if (left || mid || right) {
+        allPageRows.push({ y, left, mid, right, full });
       }
+    });
+  }
 
-      i++;
+  // ── Now parse meetings from allPageRows ──
+  // Strategy:
+  //   - Walk rows in order
+  //   - Track current day/time from schedHeaders
+  //   - When LEFT column has a location keyword → start new meeting block
+  //   - A meeting block accumulates LEFT/MID/RIGHT over consecutive rows
+  //     until LEFT changes to a new location or new schedule header
+
+  const result = [];
+  let curDay = null, curTime = null;
+  let shIdx  = 0; // schedHeaders pointer
+
+  // Build a schedule-annotated row list
+  // Insert sentinel objects for schedule changes
+  const annotated = [];
+  schedHeaders.forEach((sh, i) => {
+    const next = schedHeaders[i+1];
+    annotated.push({ type:'header', day:sh.day, time:sh.time });
+    const slice = allPageRows.slice(
+      sh.insertBefore,
+      next ? next.insertBefore : allPageRows.length
+    );
+    slice.forEach(r => annotated.push({ type:'row', ...r }));
+  });
+  // Also prepend rows before the first header (usually cover page — ignore)
+
+  let i = 0;
+  while (i < annotated.length) {
+    const item = annotated[i];
+
+    if (item.type === 'header') {
+      curDay  = item.day;
+      curTime = item.time;
+      i++; continue;
     }
+
+    if (!curDay) { i++; continue; }
+
+    const row = item;
+
+    // Start of a new meeting: LEFT col has a location keyword
+    if (isLocStart(row.left)) {
+      // Collect all lines belonging to this meeting block
+      // until: next location start, next header, or empty left for too long
+      const leftParts  = row.left ? [row.left]  : [];
+      const midParts   = row.mid  ? [row.mid]   : [];
+      const rightParts = row.right? [row.right] : [];
+
+      let j = i + 1;
+      let emptyLeftStreak = 0;
+      while (j < annotated.length) {
+        const next = annotated[j];
+        if (next.type === 'header') break;
+        if (isLocStart(next.left)) break;  // new meeting starts
+
+        if (next.left)  { leftParts.push(next.left);   emptyLeftStreak = 0; }
+        else            { emptyLeftStreak++; }
+        if (next.mid)   midParts.push(next.mid);
+        if (next.right) rightParts.push(next.right);
+
+        // Stop collecting if left column has been empty for 4+ rows
+        // and we already have host+guest data
+        if (emptyLeftStreak >= 4 && midParts.length >= 2 && rightParts.length >= 2) break;
+        j++;
+      }
+      i = j;
+
+      const location = buildLocation(leftParts);
+      const host     = extractPerson(midParts);
+      const guest    = extractPerson(rightParts);
+
+      if (host.name && guest.name && location) {
+        const id = `${curDay}|${curTime}|${location}|${host.name}|${guest.name}`;
+        result.push({
+          id, day:curDay, time:curTime, location,
+          host:host.name, hostCompany:host.company,
+          guest:guest.name, guestCompany:guest.company,
+          presence:'unknown', note:''
+        });
+      }
+      continue;
+    }
+
+    i++;
   }
 
   hideLoading();
-  return allMeetings;
+  return result;
 }
 
-// ── HELPERS ──
-function isMetaLine(s) {
-  return !s ||
-    s.match(/^\d{2}\.\d{2}\.\d{4}/) ||
-    s.match(/^\d+\s*\/\s*\d+$/) ||
-    s.includes('Business Meetings @') ||
-    s.includes('June, 2026') ||
-    s === 'Location' || s === 'Host' || s === 'Guest(s)' ||
-    s.match(/^17 June/) || s.match(/^18 June/) || s.match(/^19 June/);
+// ─── Helpers ───────────────────────────────────────────────
+
+function isMeta(s) {
+  if (!s) return true;
+  return s.match(/^\d{2}\.\d{2}\.\d{4}/) ||
+         s.match(/^\d+\s*\/\s*\d+$/) ||
+         s.includes('Business Meetings @') ||
+         s.match(/17 June.*2026|18 June.*2026|19 June.*2026/) ||
+         s === 'Location' || s === 'Host' || s === 'Guest(s)';
 }
 
-function isScheduleHeader(s) {
-  return !!s.match(/Schedule\s+for\s+(Wed|Thu|Fri)/i);
-}
-
-function isLocationStart(s) {
+function isLocStart(s) {
   if (!s) return false;
-  return s.match(/^Business\s+France/i) ||
-         s.match(/^French\s+Companies/i) ||
-         s.match(/^International\s+Buyers/i);
+  return /^Business\s+France/i.test(s) ||
+         /^French\s+Companies/i.test(s) ||
+         /^International\s+Buyers/i.test(s);
 }
 
-function isLocationContinuation(s) {
-  if (!s || s.length < 2) return false;
-  // Location continuations are things like room/booth identifiers
-  const locationWords = ['Booth','Hall','Table','pavillon','Stand','Sasu','etage','Avenue',
-    'Village','IDF','CNRS','CCI','HALL','Lounge','French Tech','Hornswaggle','CircularPlace',
-    'Suricate','DUKE','PowerUp','SiPearl','Moderlab','Contractzlab','NOSTRESS','Bodyguard',
-    'Save Your','EdTake','Pappers','3G13','Plaza','Business','France','Buyers','Companies',
-    '-','–','—'];
-  return locationWords.some(w => s.includes(w)) || s.match(/^\d[A-Z]\d/) || s.match(/^[A-Z]\d{1,2}/);
+function buildLocation(parts) {
+  return parts.join(' ')
+    .replace(/\s+/g,' ')
+    .replace(/Business\s+France\s*-\s*3G13\s*-?\s*/i,'BF 3G13 — ')
+    .replace(/French\s+Companies\s+Booth\s*-?\s*/i,'Stand ')
+    .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*-?\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*-?\s*/i,'Lounge Hall 7.2 ')
+    .replace(/\s+/g,' ').trim();
 }
 
-function extractPerson(textLines) {
-  // Filter out junk
-  const clean = textLines
-    .map(s => s.trim())
-    .filter(s => s && !isMetaLine(s) && s !== 'Host' && s !== 'Guest(s)');
-  
-  if (!clean.length) return { name: '', company: '' };
-  
-  let nameIdx = 0;
-  // Skip pure 2-3 letter initials (PC, MR, GH, etc.)
-  while (nameIdx < clean.length && clean[nameIdx].match(/^[A-Z]{1,3}$/)) nameIdx++;
-  
-  const name    = clean[nameIdx]    ? cleanPersonName(clean[nameIdx])    : '';
-  const company = clean[nameIdx+1]  ? clean[nameIdx+1].trim()            : '';
-  
-  return { name, company };
+function extractPerson(parts) {
+  // Filter junk
+  const clean = parts
+    .map(s => s.replace(/[⯑◇♦]/g,'').trim())
+    .filter(s => s && !isMeta(s));
+
+  if (!clean.length) return { name:'', company:'' };
+
+  // Skip lines that are pure 1-3 letter initials (like "PC", "MR", "GH")
+  let idx = 0;
+  while (idx < clean.length && /^[A-Z]{1,3}$/.test(clean[idx])) idx++;
+
+  const name    = clean[idx]   || '';
+  const company = clean[idx+1] || '';
+  return { name:name.trim(), company:company.trim() };
 }
 
-function cleanPersonName(s) {
-  // Remove stray chars from PDF extraction
-  return s.replace(/[⯑◇♦]/g, '').replace(/\s+/g, ' ').trim();
-}
+// ─── File handling ─────────────────────────────────────────
 
-function cleanLocation(raw) {
-  return raw
-    .replace(/\s+/g, ' ')
-    .replace(/Business\s+France\s*[-–]\s*3G13\s*[-–]?\s*/i, 'BF 3G13 — ')
-    .replace(/French\s+Companies\s+Booth\s*[-–]?\s*/i, 'Stand ')
-    .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*:\s*Business\s*Plaza\s*[-–]?\s*/i, 'Lounge Hall 7.2 ')
-    .replace(/\s+/g, ' ').trim();
-}
-
-// ── FILE HANDLING ──
 async function handleFile(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], false);
   input.value = '';
 }
-
 async function handleReimport(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], true);
   input.value = '';
 }
-
 async function processNewPDF(file, isReimport) {
   try {
     const parsed = await parsePDFFile(file);
-    
     if (!parsed.length) {
-      // Show debug info
-      alert(`Aucun rendez-vous trouvé (0 RDV extraits sur ${file.name}).\n\nVérifiez que le PDF contient bien des pages "Schedule for Wed/Thu/Fri".`);
+      alert('Aucun rendez-vous trouvé.\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".');
       return;
     }
-
     if (isReimport && meetings.length > 0) {
-      const existingIds = new Set(meetings.map(m => m.id));
-      const newIds      = new Set(parsed.map(m => m.id));
-      const added   = parsed.filter(m => !existingIds.has(m.id));
-      const removed = meetings.filter(m => !newIds.has(m.id));
-      const kept    = parsed.filter(m => existingIds.has(m.id));
-      pendingImport = { parsed, added, removed, kept };
-      showDiffModal(added, removed, kept);
+      const existingIds = new Set(meetings.map(m=>m.id));
+      const newIds      = new Set(parsed.map(m=>m.id));
+      pendingImport = {
+        parsed,
+        added:   parsed.filter(m=>!existingIds.has(m.id)),
+        removed: meetings.filter(m=>!newIds.has(m.id)),
+        kept:    parsed.filter(m=>existingIds.has(m.id))
+      };
+      showDiffModal();
     } else {
       meetings = parsed;
       initApp();
@@ -553,11 +454,12 @@ async function processNewPDF(file, isReimport) {
   } catch(e) {
     hideLoading();
     console.error(e);
-    alert('Erreur lors de la lecture du PDF :\n' + e.message);
+    alert('Erreur : ' + e.message);
   }
 }
 
-function showDiffModal(added, removed, kept) {
+function showDiffModal() {
+  const { added, removed, kept } = pendingImport;
   document.getElementById('diff-summary').innerHTML = `
     <div class="diff-line"><span>RDV maintenus</span><strong>${kept.length}</strong></div>
     <div class="diff-line" style="color:#2e7d32"><span>➕ Nouveaux RDV</span><strong>${added.length}</strong></div>
@@ -565,38 +467,33 @@ function showDiffModal(added, removed, kept) {
     <div class="diff-line"><span>✅ Coches conservées</span><strong>${meetings.filter(m=>m.presence!=='unknown').length}</strong></div>`;
   document.getElementById('diff-modal').classList.add('open');
 }
-
 function closeDiffModal() {
   document.getElementById('diff-modal').classList.remove('open');
   pendingImport = null;
 }
-
 function applyImport() {
-  if (!pendingImport) return;
-  const existingMap = {};
-  meetings.forEach(m => existingMap[m.id] = m);
+  const map = {};
+  meetings.forEach(m => map[m.id] = m);
   meetings = pendingImport.parsed.map(m => {
-    const ex = existingMap[m.id];
-    return ex ? { ...m, presence: ex.presence, note: ex.note } : m;
+    const ex = map[m.id];
+    return ex ? { ...m, presence:ex.presence, note:ex.note } : m;
   });
   closeDiffModal();
   initApp();
 }
 
-// ── APP INIT ──
+// ─── App init & render ──────────────────────────────────────
+
 function initApp() {
   document.getElementById('upload-zone').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  
-  const times = [...new Set(meetings.map(m => m.time))].sort();
+  const times = [...new Set(meetings.map(m=>m.time))].sort();
   const sel = document.getElementById('time-filter');
   sel.innerHTML = '<option value="">Tous horaires</option>';
-  times.forEach(t => { const o = document.createElement('option'); o.value = o.textContent = t; sel.appendChild(o); });
-  
+  times.forEach(t => { const o=document.createElement('option'); o.value=o.textContent=t; sel.appendChild(o); });
   render();
 }
 
-// ── RENDER ──
 function render() {
   updateStats();
   const filtered = getFiltered();
@@ -605,36 +502,33 @@ function render() {
 }
 
 function getFiltered() {
-  let data = [...meetings];
-  if (filterDay !== 'all')      data = data.filter(m => m.day === filterDay);
-  if (filterPresence !== 'all') data = data.filter(m => m.presence === filterPresence);
-  if (filterTime)               data = data.filter(m => m.time === filterTime);
+  let d = [...meetings];
+  if (filterDay!=='all')      d = d.filter(m=>m.day===filterDay);
+  if (filterPresence!=='all') d = d.filter(m=>m.presence===filterPresence);
+  if (filterTime)             d = d.filter(m=>m.time===filterTime);
   if (filterSearch) {
     const q = filterSearch.toLowerCase();
-    data = data.filter(m =>
-      [m.host, m.hostCompany, m.guest, m.guestCompany, m.location]
-        .some(s => s.toLowerCase().includes(q))
-    );
+    d = d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany,m.location].some(s=>s.toLowerCase().includes(q)));
   }
-  data.sort((a,b) => {
-    const va = a[sortCol]||'', vb = b[sortCol]||'';
-    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+  d.sort((a,b)=>{
+    const va=a[sortCol]||'', vb=b[sortCol]||'';
+    return va<vb?-sortDir:va>vb?sortDir:0;
   });
-  return data;
+  return d;
 }
 
 function renderTable(data) {
   const tbody = document.getElementById('table-body');
   const empty = document.getElementById('empty-state');
-  if (!data.length) { tbody.innerHTML = ''; empty.style.display='block'; return; }
+  if (!data.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-  const dayClass = { Mer:'day-wed', Jeu:'day-thu', Ven:'day-fri' };
-  const dayLabel = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
+  const dc = { Mer:'day-wed', Jeu:'day-thu', Ven:'day-fri' };
+  const dl = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
   tbody.innerHTML = data.map(m => {
-    const pc = m.presence==='present'?'present-row': m.presence==='absent'?'absent-row':'';
+    const pc = m.presence==='present'?'present-row':m.presence==='absent'?'absent-row':'';
     const id = esc(m.id);
     return `<tr class="${pc}">
-      <td><span class="day-badge ${dayClass[m.day]||''}">${dayLabel[m.day]||m.day}</span></td>
+      <td><span class="day-badge ${dc[m.day]||''}">${dl[m.day]||m.day}</span></td>
       <td class="time-cell">${m.time}</td>
       <td class="location-cell">${esc(m.location)}</td>
       <td><div class="person-name">${esc(m.host)}</div></td>
@@ -642,110 +536,64 @@ function renderTable(data) {
       <td><div class="person-name">${esc(m.guest)}</div></td>
       <td><div class="person-company">${esc(m.guestCompany)}</div></td>
       <td><div class="presence-toggle">
-        <button class="toggle-btn ${m.presence==='present'?'active-present':''}" onclick="togglePresence('${id}','present')" title="Présent">✓</button>
-        <button class="toggle-btn ${m.presence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','absent')" title="Absent">✗</button>
+        <button class="toggle-btn ${m.presence==='present'?'active-present':''}" onclick="togglePresence('${id}','present')">✓</button>
+        <button class="toggle-btn ${m.presence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','absent')">✗</button>
       </div></td>
       <td><input class="note-input" value="${esc(m.note)}" placeholder="Note…" onchange="updateNote('${id}',this.value)"></td>
     </tr>`;
   }).join('');
 }
 
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function updateStats() {
-  const total   = meetings.length;
-  const present = meetings.filter(m=>m.presence==='present').length;
-  const absent  = meetings.filter(m=>m.presence==='absent').length;
-  document.getElementById('stat-total').textContent   = total;
-  document.getElementById('stat-present').textContent = present;
-  document.getElementById('stat-absent').textContent  = absent;
-  document.getElementById('stat-unknown').textContent = total - present - absent;
-  const pp = total ? (present/total*100).toFixed(1) : 0;
-  const ap = total ? (absent/total*100).toFixed(1)  : 0;
-  document.getElementById('bar-present').style.width = pp+'%';
-  document.getElementById('bar-absent').style.width  = ap+'%';
+  const t=meetings.length, p=meetings.filter(m=>m.presence==='present').length, a=meetings.filter(m=>m.presence==='absent').length;
+  document.getElementById('stat-total').textContent=t;
+  document.getElementById('stat-present').textContent=p;
+  document.getElementById('stat-absent').textContent=a;
+  document.getElementById('stat-unknown').textContent=t-p-a;
+  document.getElementById('bar-present').style.width=(t?p/t*100:0)+'%';
+  document.getElementById('bar-absent').style.width=(t?a/t*100:0)+'%';
 }
 
-// ── INTERACTIONS ──
-function togglePresence(id, val) {
-  const m = meetings.find(m=>m.id===id);
-  if (m) { m.presence = m.presence===val ? 'unknown' : val; render(); }
-}
-function updateNote(id, val) {
-  const m = meetings.find(m=>m.id===id);
-  if (m) m.note = val;
-}
-function setDayFilter(btn) {
-  filterDay = btn.dataset.day;
-  document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); render();
-}
-function setPresenceFilter(btn) {
-  filterPresence = btn.dataset.presence;
-  document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); render();
-}
-function applyFilters() {
-  filterSearch = document.getElementById('search-input').value;
-  filterTime   = document.getElementById('time-filter').value;
-  render();
-}
-function sortBy(col) {
-  if (sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; }
-  render();
-}
+function togglePresence(id,val){ const m=meetings.find(m=>m.id===id); if(m){m.presence=m.presence===val?'unknown':val; render();} }
+function updateNote(id,val){ const m=meetings.find(m=>m.id===id); if(m) m.note=val; }
+function setDayFilter(btn){ filterDay=btn.dataset.day; document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function setPresenceFilter(btn){ filterPresence=btn.dataset.presence; document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function applyFilters(){ filterSearch=document.getElementById('search-input').value; filterTime=document.getElementById('time-filter').value; render(); }
+function sortBy(col){ if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=1;} render(); }
 
-// ── EXPORT ──
 function exportExcel() {
   const wb = XLSX.utils.book_new();
   const pl = { present:'✓ Présent', absent:'✗ Absent', unknown:'?' };
   const dl = { Mer:'Mer 17/06', Jeu:'Jeu 18/06', Ven:'Ven 19/06' };
-  
-  const rows = [['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
-  meetings.forEach(m => rows.push([dl[m.day]||m.day, m.time, m.location, m.host, m.hostCompany, m.guest, m.guestCompany, pl[m.presence]||'?', m.note]));
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb, ws, 'Planning RDV');
-
-  const statsRows = [['Jour','Total','Présents','Absents','Non renseigné','Taux']];
-  ['Mer','Jeu','Ven'].forEach(d => {
-    const dm = meetings.filter(m=>m.day===d);
-    const p = dm.filter(m=>m.presence==='present').length;
-    const a = dm.filter(m=>m.presence==='absent').length;
-    statsRows.push([dl[d], dm.length, p, a, dm.length-p-a, dm.length ? ((p/dm.length)*100).toFixed(1)+'%' : '-']);
+  const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
+  meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,m.guest,m.guestCompany,pl[m.presence]||'?',m.note]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Planning RDV');
+  const sr=[['Jour','Total','Présents','Absents','Non renseigné','Taux']];
+  ['Mer','Jeu','Ven'].forEach(d=>{
+    const dm=meetings.filter(m=>m.day===d);
+    const p=dm.filter(m=>m.presence==='present').length, a=dm.filter(m=>m.presence==='absent').length;
+    sr.push([dl[d],dm.length,p,a,dm.length-p-a,dm.length?((p/dm.length)*100).toFixed(1)+'%':'-']);
   });
-  const t=meetings.length, tp=meetings.filter(m=>m.presence==='present').length, ta=meetings.filter(m=>m.presence==='absent').length;
-  statsRows.push(['TOTAL', t, tp, ta, t-tp-ta, t?((tp/t)*100).toFixed(1)+'%':'-']);
-  const ws2 = XLSX.utils.aoa_to_sheet(statsRows);
-  ws2['!cols'] = [15,10,10,10,14,12].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb, ws2, 'Résumé');
-  
-  XLSX.writeFile(wb, `Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
+  const t=meetings.length,tp=meetings.filter(m=>m.presence==='present').length,ta=meetings.filter(m=>m.presence==='absent').length;
+  sr.push(['TOTAL',t,tp,ta,t-tp-ta,t?((tp/t)*100).toFixed(1)+'%':'-']);
+  const ws2=XLSX.utils.aoa_to_sheet(sr);
+  ws2['!cols']=[15,10,10,10,14,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Résumé');
+  XLSX.writeFile(wb,`Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ── LOADING ──
-function showLoading(msg, sub) {
-  document.getElementById('loading-text').textContent = msg||'Chargement…';
-  document.getElementById('loading-sub').textContent  = sub||'';
-  document.getElementById('loading').classList.add('show');
-}
-function updateLoading(msg, sub) {
-  document.getElementById('loading-text').textContent = msg;
-  document.getElementById('loading-sub').textContent  = sub||'';
-}
-function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+function showLoading(msg,sub){ document.getElementById('loading-text').textContent=msg||'Chargement…'; document.getElementById('loading-sub').textContent=sub||''; document.getElementById('loading').classList.add('show'); }
+function updateLoading(msg,sub){ document.getElementById('loading-text').textContent=msg; document.getElementById('loading-sub').textContent=sub||''; }
+function hideLoading(){ document.getElementById('loading').classList.remove('show'); }
 
-// ── DRAG & DROP ──
-const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
-dz.addEventListener('dragleave', ()  => dz.classList.remove('dragover'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('dragover');
-  const f = e.dataTransfer.files[0];
-  if (f?.type === 'application/pdf') processNewPDF(f, false);
-});
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f?.type==='application/pdf')processNewPDF(f,false);});
 </script>
 </body>
 </html>
