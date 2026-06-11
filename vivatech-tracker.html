@@ -348,28 +348,34 @@ let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterLocs=new Set(), filterSearch='';
 let currentView='table', personSort='total', personRole='all';
 let allLocs=[];
-let supabase=null, localMode=false;
+const SB_URL='https://efmbsdytlzqybxyenmwq.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbWJzZHl0bHpxeWJ4eWVubXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODUxNDksImV4cCI6MjA5Njc2MTE0OX0.lk-kK2gldd4VRmYxrDO9TBcshjp4Zo5gXqHlka-2UXM';
+let sbClient=null, localMode=false;
+
+// Storage helper
+function storageGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function storageSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
 // ── SUPABASE SETUP ─────────────────────────────────────────
 function saveConfig(){
   const url=document.getElementById('sb-url').value.trim();
   const key=document.getElementById('sb-key').value.trim();
-  if(url) localStorage.setItem('sb_url',url);
-  if(key) localStorage.setItem('sb_key',key);
+  if(url) storageSet('sb_url',url);
+  if(key) storageSet('sb_key',key);
 }
 
 async function connectSupabase(){
-  const url=document.getElementById('sb-url').value.trim()||localStorage.getItem('sb_url');
-  const key=document.getElementById('sb-key').value.trim()||localStorage.getItem('sb_key');
+  const url=document.getElementById('sb-url').value.trim()||storageGet('sb_url');
+  const key=document.getElementById('sb-key').value.trim()||storageGet('sb_key');
   if(!url||!key){showSetupError('Renseignez l\'URL et la clé API.');return;}
   showLoading('Connexion à Supabase…');
   try{
-    supabase=window.supabase.createClient(url,key);
+    sbClient=window.supabase.createClient(url,key);
     // Test connection
-    const {error}=await supabase.from('meetings').select('id').limit(1);
+    const {error}=await sbClient.from('meetings').select('id').limit(1);
     if(error) throw new Error(error.message);
-    localStorage.setItem('sb_url',url);
-    localStorage.setItem('sb_key',key);
+    storageSet('sb_url',url);
+    storageSet('sb_key',key);
     hideLoading();
     await loadFromSupabase();
   }catch(e){
@@ -394,7 +400,7 @@ function useLocalMode(){
 async function loadFromSupabase(){
   showLoading('Chargement des données…');
   try{
-    const{data,error}=await supabase.from('meetings').select('*');
+    const{data,error}=await sbClient.from('meetings').select('*');
     if(error) throw error;
     if(!data||data.length===0){
       // No data yet — show upload screen
@@ -430,8 +436,8 @@ async function loadFromSupabase(){
 }
 
 function subscribeRealtime(){
-  if(!supabase) return;
-  supabase.channel('meetings-changes')
+  if(!sbClient) return;
+  sbClient.channel('meetings-changes')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'meetings'},payload=>{
       const m=meetings.find(m=>m.id===payload.new.id);
       if(m){
@@ -578,13 +584,13 @@ async function saveToBackend(data){
     const newIds=new Set(data.map(m=>m.id));
     const toDelete=meetings.filter(m=>!newIds.has(m.id)).map(m=>m.id);
     if(toDelete.length>0){
-      await supabase.from('meetings').delete().in('id',toDelete);
+      await sbClient.from('meetings').delete().in('id',toDelete);
     }
     // Upsert in batches of 500
     for(let i=0;i<toUpsert.length;i+=500){
       const batch=toUpsert.slice(i,i+500);
       updateLoading(`Sauvegarde…`,`${i+batch.length} / ${toUpsert.length}`);
-      const{error}=await supabase.from('meetings').upsert(batch);
+      const{error}=await sbClient.from('meetings').upsert(batch);
       if(error)throw error;
     }
     meetings=toUpsert;
@@ -759,9 +765,9 @@ async function togglePresence(id,val){
   if(!m)return;
   m.presence=m.presence===val?'unknown':val;
   render();if(currentView==='persons')renderPersons();
-  if(!localMode&&supabase){
+  if(!localMode&&sbClient){
     setSyncStatus('syncing','Sauvegarde…');
-    const{error}=await supabase.from('meetings').update({presence:m.presence}).eq('id',id);
+    const{error}=await sbClient.from('meetings').update({presence:m.presence}).eq('id',id);
     setSyncStatus(error?'error':'ok',error?'Erreur':'Synchronisé');
   }
 }
@@ -769,9 +775,9 @@ async function updateNote(id,val){
   const m=meetings.find(m=>m.id===id);
   if(!m)return;
   m.note=val;
-  if(!localMode&&supabase){
+  if(!localMode&&sbClient){
     setSyncStatus('syncing','Sauvegarde…');
-    const{error}=await supabase.from('meetings').update({note:val}).eq('id',id);
+    const{error}=await sbClient.from('meetings').update({note:val}).eq('id',id);
     setSyncStatus(error?'error':'ok',error?'Erreur':'Synchronisé');
   }
 }
@@ -874,14 +880,23 @@ if(dz){
 }
 
 // ── AUTO-CONNECT on load ───────────────────────────────────
-window.addEventListener('DOMContentLoaded',()=>{
-  const url=localStorage.getItem('sb_url');
-  const key=localStorage.getItem('sb_key');
-  if(url&&key){
-    document.getElementById('sb-url').value=url;
-    document.getElementById('sb-key').value=key;
-    connectSupabase();
+async function autoConnect(){
+  try{
+    sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+    const{error}=await sbClient.from('meetings').select('id').limit(1);
+    if(error)throw error;
+    await loadFromSupabase();
+  }catch(e){
+    console.warn('Auto-connect failed:',e.message);
+    // Fallback: show setup screen
+    document.getElementById('setup-zone').style.display='flex';
+    document.getElementById('sb-url').value=SB_URL;
+    document.getElementById('sb-key').value=SB_KEY;
   }
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  autoConnect();
 });
 </script>
 </body>
