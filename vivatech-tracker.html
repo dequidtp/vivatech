@@ -10,6 +10,8 @@
   :root{--navy:#0d1b2a;--navy2:#1a2e45;--blue:#1565c0;--blue-lt:#1976d2;--accent:#e53935;--gold:#f9a825;--green:#2e7d32;--grey:#90a4ae;--grey-lt:#eceff1;--grey-mid:#cfd8dc;--text:#1a2e45;--text-soft:#546e7a;--surface:#f5f7fa}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--surface);color:var(--text);font-size:13px}
+
+  /* HEADER */
   header{background:var(--navy);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
   .header-left{display:flex;align-items:center;gap:16px}
   .logo-mark{width:32px;height:32px;border-radius:4px;flex-shrink:0;background:linear-gradient(135deg,#002395 33%,#fff 33%,#fff 66%,#ed2939 66%)}
@@ -21,6 +23,8 @@
   .btn-outline{background:transparent;color:white;border:1px solid rgba(255,255,255,.3)}.btn-outline:hover{background:rgba(255,255,255,.1)}
   .btn-success{background:var(--green);color:white}.btn-success:hover{background:#1b5e20}
   .btn-cancel{background:var(--grey-lt);color:var(--text)}
+
+  /* UPLOAD */
   #upload-zone{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
   .upload-card{background:white;border-radius:16px;padding:56px 64px;box-shadow:0 2px 8px rgba(13,27,42,.1);text-align:center;max-width:480px;border:2px dashed var(--grey-mid);transition:border-color .2s}
   .upload-card.dragover{border-color:var(--blue-lt)}
@@ -30,7 +34,11 @@
   .upload-label{display:inline-flex;align-items:center;gap:8px;background:var(--blue-lt);color:white;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:background .15s}
   .upload-label:hover{background:var(--blue)}
   .upload-hint{color:var(--grey);font-size:11px;margin-top:12px}
+
+  /* APP */
   #app{display:none}
+
+  /* STATS BAR */
   .stats-bar{display:flex;gap:16px;padding:10px 20px;background:var(--navy2);color:white;flex-wrap:wrap;align-items:center}
   .stat-item{display:flex;flex-direction:column;align-items:center;min-width:70px}
   .stat-num{font-size:20px;font-weight:700;line-height:1}
@@ -40,15 +48,28 @@
   .presence-bar-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em}
   .presence-bar-track{height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden;display:flex}
   .bar-present{background:#81c784;transition:width .4s}.bar-absent{background:#ef9a9a;transition:width .4s}
-  .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .toolbar-sep{width:1px;height:24px;background:var(--grey-mid)}
+
+  /* TABS */
+  .view-tabs{display:flex;gap:0;background:white;border-bottom:2px solid var(--grey-mid)}
+  .view-tab{padding:12px 24px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-soft);border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+  .view-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+  .view-tab:hover:not(.active){color:var(--text);background:var(--grey-lt)}
+
+  /* TOOLBAR */
+  .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .toolbar-sep{width:1px;height:24px;background:var(--grey-mid);flex-shrink:0}
   .filter-tabs{display:flex;gap:2px}
-  .filter-tab{padding:6px 14px;border-radius:6px;border:1px solid var(--grey-mid);background:white;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-soft);transition:all .15s}
+  .filter-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--grey-mid);background:white;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap}
   .filter-tab.active{background:var(--navy);color:white;border-color:var(--navy)}.filter-tab:hover:not(.active){background:var(--grey-lt)}
   input[type=search],select{padding:7px 12px;border-radius:6px;border:1px solid var(--grey-mid);font-size:12px;color:var(--text);background:white;outline:none}
   input[type=search]:focus,select:focus{border-color:var(--blue-lt)}
-  input[type=search]{width:220px}
-  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 230px)}
+  input[type=search]{width:200px}
+  select{max-width:200px}
+
+  /* TABLE VIEW */
+  #view-table{display:block}
+  #view-persons{display:none}
+  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 260px)}
   table{width:100%;border-collapse:collapse}
   thead th{position:sticky;top:0;z-index:10;background:var(--navy);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
   thead th:hover{background:var(--navy2)}
@@ -61,7 +82,7 @@
   .day-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
   .day-wed{background:#e8f5e9;color:#2e7d32}.day-thu{background:#e3f2fd;color:#1565c0}.day-fri{background:#fff8e1;color:#f57f17}
   .time-cell{font-weight:600;font-size:13px;color:var(--navy);white-space:nowrap}
-  .location-cell{max-width:200px;font-size:11px;color:var(--text-soft);line-height:1.4}
+  .location-cell{max-width:180px;font-size:11px;color:var(--text-soft);line-height:1.4}
   .person-name{font-weight:600;color:var(--text)}.person-company{font-size:11px;color:var(--text-soft)}
   .presence-toggle{display:flex;gap:4px;align-items:center;justify-content:center}
   .toggle-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--grey-mid);background:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -70,6 +91,40 @@
   .toggle-btn.active-absent{background:var(--accent);border-color:var(--accent);color:white}
   .note-input{border:none;background:transparent;width:100%;font-size:12px;color:var(--text-soft);outline:none;padding:2px 4px;border-radius:4px;font-family:inherit}
   .note-input:hover{background:var(--grey-lt)}.note-input:focus{background:white;border:1px solid var(--blue-lt)}
+  .empty-state{text-align:center;padding:64px 32px;color:var(--text-soft)}
+
+  /* PERSONS VIEW */
+  .persons-container{padding:20px;overflow-y:auto;max-height:calc(100vh - 260px)}
+  .persons-toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .person-card{background:white;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(13,27,42,.08);border:1px solid var(--grey-mid);cursor:pointer;transition:all .15s}
+  .person-card:hover{box-shadow:0 4px 12px rgba(13,27,42,.15);border-color:var(--blue-lt);transform:translateY(-1px)}
+  .person-card.expanded{border-color:var(--blue-lt)}
+  .person-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .person-card-info{flex:1;min-width:0}
+  .person-card-name{font-weight:700;font-size:14px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .person-card-company{font-size:11px;color:var(--text-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .person-role-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;flex-shrink:0}
+  .role-host{background:#e3f2fd;color:#1565c0}
+  .role-guest{background:#f3e5f5;color:#7b1fa2}
+  .role-both{background:#fff3e0;color:#e65100}
+  .person-stats{display:flex;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--grey-lt)}
+  .pstat{display:flex;flex-direction:column;align-items:center;flex:1}
+  .pstat-num{font-size:18px;font-weight:700;color:var(--navy)}
+  .pstat-num.p{color:var(--green)}.pstat-num.a{color:var(--accent)}
+  .pstat-label{font-size:10px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em}
+  .person-mini-bar{height:4px;border-radius:2px;background:var(--grey-lt);overflow:hidden;margin-top:8px}
+  .person-mini-bar-fill{height:100%;background:var(--green);transition:width .4s}
+  .person-meetings-list{margin-top:12px;display:none}
+  .person-card.expanded .person-meetings-list{display:block}
+  .pmeet{font-size:11px;padding:5px 8px;border-radius:6px;background:var(--surface);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+  .pmeet-time{font-weight:600;color:var(--navy);white-space:nowrap}
+  .pmeet-loc{color:var(--text-soft);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pmeet-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .pmeet-dot.present{background:var(--green)}.pmeet-dot.absent{background:var(--accent)}.pmeet-dot.unknown{background:var(--grey)}
+  .persons-sort{display:flex;gap:2px}
+
+  /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.7);z-index:200;align-items:center;justify-content:center}
   .modal-overlay.open{display:flex}
   .modal{background:white;border-radius:12px;padding:32px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -77,12 +132,13 @@
   .diff-summary{background:var(--surface);border-radius:8px;padding:16px;margin-bottom:20px}
   .diff-line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.diff-line+.diff-line{border-top:1px solid var(--grey-mid)}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+
+  /* LOADING */
   .loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.85);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:white}
   .loading-overlay.show{display:flex}
   .spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .loading-text{font-size:14px;opacity:.9}.loading-sub{font-size:12px;opacity:.6}
-  .empty-state{text-align:center;padding:64px 32px;color:var(--text-soft)}
 </style>
 </head>
 <body>
@@ -129,6 +185,7 @@
 </div>
 
 <div id="app">
+  <!-- STATS BAR -->
   <div class="stats-bar">
     <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total RDV</span></div>
     <div class="stat-item present"><span class="stat-num" id="stat-present">0</span><span class="stat-label">Présents</span></div>
@@ -142,42 +199,77 @@
       </div>
     </div>
   </div>
-  <div class="toolbar">
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous</button>
-      <button class="filter-tab" data-day="Mer" onclick="setDayFilter(this)">Mer 17/06</button>
-      <button class="filter-tab" data-day="Jeu" onclick="setDayFilter(this)">Jeu 18/06</button>
-      <button class="filter-tab" data-day="Ven" onclick="setDayFilter(this)">Ven 19/06</button>
-    </div>
-    <div class="toolbar-sep"></div>
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-presence="all" onclick="setPresenceFilter(this)">Tous</button>
-      <button class="filter-tab" data-presence="present" onclick="setPresenceFilter(this)">✓ Présents</button>
-      <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Absents</button>
-      <button class="filter-tab" data-presence="unknown" onclick="setPresenceFilter(this)">? Non renseigné</button>
-    </div>
-    <div class="toolbar-sep"></div>
-    <input type="search" id="search-input" placeholder="🔍 Nom, société, lieu…" oninput="applyFilters()">
-    <select id="time-filter" onchange="applyFilters()"><option value="">Tous horaires</option></select>
-    <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="row-count"></span>
+
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('table', this)">📋 Rendez-vous</button>
+    <button class="view-tab" onclick="switchView('persons', this)">👤 Par personne</button>
   </div>
-  <div class="table-wrapper">
-    <table>
-      <thead><tr>
-        <th onclick="sortBy('day')">Jour ↕</th>
-        <th onclick="sortBy('time')">Heure ↕</th>
-        <th onclick="sortBy('location')">Lieu ↕</th>
-        <th onclick="sortBy('host')">Hôte ↕</th>
-        <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
-        <th onclick="sortBy('guest')">Invité(e) ↕</th>
-        <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
-        <th style="text-align:center;min-width:90px">Présence</th>
-        <th style="min-width:140px">Notes</th>
-      </tr></thead>
-      <tbody id="table-body"></tbody>
-    </table>
-    <div class="empty-state" id="empty-state" style="display:none">
-      <div style="font-size:32px">🔍</div><p>Aucun rendez-vous trouvé.</p>
+
+  <!-- ─── TABLE VIEW ─── -->
+  <div id="view-table">
+    <div class="toolbar">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-day="all" onclick="setDayFilter(this)">Tous</button>
+        <button class="filter-tab" data-day="Mer" onclick="setDayFilter(this)">Mer 17/06</button>
+        <button class="filter-tab" data-day="Jeu" onclick="setDayFilter(this)">Jeu 18/06</button>
+        <button class="filter-tab" data-day="Ven" onclick="setDayFilter(this)">Ven 19/06</button>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-presence="all" onclick="setPresenceFilter(this)">Tous</button>
+        <button class="filter-tab" data-presence="present" onclick="setPresenceFilter(this)">✓ Présents</button>
+        <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Absents</button>
+        <button class="filter-tab" data-presence="unknown" onclick="setPresenceFilter(this)">? Non renseigné</button>
+      </div>
+      <div class="toolbar-sep"></div>
+      <select id="time-filter" onchange="applyFilters()"><option value="">Tous horaires</option></select>
+      <select id="location-filter" onchange="applyFilters()"><option value="">Tous lieux</option></select>
+      <input type="search" id="search-input" placeholder="🔍 Nom, société…" oninput="applyFilters()">
+      <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="row-count"></span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('day')">Jour ↕</th>
+          <th onclick="sortBy('time')">Heure ↕</th>
+          <th onclick="sortBy('location')">Lieu ↕</th>
+          <th onclick="sortBy('host')">Hôte ↕</th>
+          <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
+          <th onclick="sortBy('guest')">Invité(e) ↕</th>
+          <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
+          <th style="text-align:center;min-width:90px">Présence</th>
+          <th style="min-width:140px">Notes</th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div style="font-size:32px">🔍</div><p>Aucun rendez-vous trouvé.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PERSONS VIEW ─── -->
+  <div id="view-persons" style="display:none">
+    <div class="persons-toolbar">
+      <input type="search" id="person-search" placeholder="🔍 Rechercher une personne ou société…" oninput="renderPersons()" style="width:260px">
+      <div class="toolbar-sep"></div>
+      <span style="font-size:12px;color:var(--text-soft)">Trier par :</span>
+      <div class="persons-sort filter-tabs">
+        <button class="filter-tab active" data-psort="total" onclick="setPersonSort(this)">Nb RDV</button>
+        <button class="filter-tab" data-psort="name" onclick="setPersonSort(this)">Nom</button>
+        <button class="filter-tab" data-psort="present" onclick="setPersonSort(this)">Présents</button>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-prole="all" onclick="setPersonRole(this)">Tous</button>
+        <button class="filter-tab" data-prole="host" onclick="setPersonRole(this)">Hôtes</button>
+        <button class="filter-tab" data-prole="guest" onclick="setPersonRole(this)">Invités</button>
+      </div>
+      <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="person-count"></span>
+    </div>
+    <div class="persons-container">
+      <div class="persons-grid" id="persons-grid"></div>
     </div>
   </div>
 </div>
@@ -187,278 +279,134 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 
 let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
-let filterDay='all', filterPresence='all', filterTime='', filterSearch='';
+let filterDay='all', filterPresence='all', filterTime='', filterLoc='', filterSearch='';
+let currentView='table';
+let personSort='total', personRole='all';
 
 // ═══════════════════════════════════════════════════════════════
-// PDF PARSER
-//
-// From debug output, each item has EXACT coordinates:
-//   x=72  y=700  "Schedule for Wed, Jun 17 10:30"   ← single string!
-//   x=72  y=647  "Business"
-//   x=177 y=647  "Emma LAZZERI"
-//   x=368 y=647  "Etienne Savin"
-//   x=72  y=632  "France - 3G13"
-//   x=177 y=632  "HORNSWAGGLE"
-//   x=368 y=632  "Business France"
-//   x=72  y=617  "-"
-//   x=72  y=602  "Hornswaggle"
-//   x=72  y=587  "French"
-//   x=177 y=587  "Françoise Nauton-Inglis"
-//   x=368 y=587  "Bianca Fraga"
-//   x=72  y=572  "Companies"
-//   x=177 y=572  "Juliia"
-//   x=368 y=572  "Farmácias São João"
-//
-// STRATEGY:
-// 1. Collect ALL items with their x,y
-// 2. Items at x≈177 (mid col) that are PERSON NAMES start a new meeting
-// 3. The meeting's host = mid-col items in a Y-pair
-// 4. The meeting's guest = right-col items in same Y-pair
-// 5. The meeting's location = ALL left-col (x≈72) items between
-//    the previous meeting's last y and this one's y
-//
-// KEY: a new meeting begins when x≈177 has a NAME (not a company)
-// We detect this because the FIRST mid-col item after a schedule header
-// or after a complete meeting is a person name.
-// Actually simpler: group items by Y, then for each Y that has BOTH
-// mid(x≈177) AND right(x≈368), that's a "data row" for a meeting.
+// PDF PARSER — based on exact coordinates from debug:
+//   x≈72  = left col (location)
+//   x≈177 = mid col  (host)
+//   x≈368 = right col (guest)
+// Meetings come in pairs of rows: names row then companies row
 // ═══════════════════════════════════════════════════════════════
-
 async function parsePDFFile(file) {
   showLoading('Ouverture du PDF…');
   const ab  = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({data:ab}).promise;
-
   const DAY_MAP = {Wed:'Mer', Thu:'Jeu', Fri:'Ven'};
   const result  = [];
 
   for (let pn = 1; pn <= pdf.numPages; pn++) {
     updateLoading(`Page ${pn} / ${pdf.numPages}`, `${result.length} RDV extraits`);
-
     const page = await pdf.getPage(pn);
     const tc   = await page.getTextContent();
 
-    // Collect all items
     const items = tc.items
       .filter(i => i.str && i.str.trim())
-      .map(i => ({
-        x: Math.round(i.transform[4]),
-        y: Math.round(i.transform[5]),
-        text: i.str.trim()
-      }));
+      .map(i => ({x:Math.round(i.transform[4]), y:Math.round(i.transform[5]), text:i.str.trim()}));
 
-    // Sort top-to-bottom, left-to-right
-    items.sort((a,b) => b.y - a.y || a.x - b.x);
-
-    // ── Pass 1: find schedule headers (single text item containing full header) ──
-    // and build per-page structures
-    let curDay = null, curTime = null;
-
-    // Group items by Y (tolerance ±2)
+    items.sort((a,b) => b.y-a.y || a.x-b.x);
     const rows = groupByY(items, 2);
 
-    // ── Pass 2: walk rows, track state ──
-    // 
-    // State:
-    //   - locParts: left-col strings for current location
-    //   - meetingRows: pairs of {hostName, hostCo, guestName, guestCo}
-    //     (row 1 = names, row 2 = companies)
-    //   - We emit a meeting whenever we have 2 consecutive "data rows"
-    //     with the same pattern (mid+right both present)
+    let curDay=null, curTime=null;
+    let locBuffer=[], dataRows=[];
 
-    // Approach: collect all "data rows" (rows with mid AND right content)
-    // between schedule headers, then pair them up.
-
-    let dataRows = [];  // {y, left, mid, right}
-    let locBuffer = []; // left-col strings since last data row pair
-
-    const emitMeeting = (row1, row2, locStr, day, time) => {
-      // row1 = names row, row2 = companies row
-      const hostName    = skipInitials(row1.mid);
-      const hostCompany = row2 ? row2.mid : '';
-      const guestName   = skipInitials(row1.right);
-      const guestCo     = row2 ? row2.right : '';
-      const location    = formatLocation(locStr);
-
-      if (hostName && guestName && location && day) {
-        const id = `${day}|${time}|${location}|${hostName}|${guestName}`;
-        result.push({
-          id, day, time, location,
-          host: clean(hostName),   hostCompany: clean(hostCompany),
-          guest: clean(guestName), guestCompany: clean(guestCo),
-          presence: 'unknown', note: ''
-        });
+    const emitMeeting = (r1, r2) => {
+      const hostName    = skipInitials(r1.mid);
+      const hostCompany = r2 ? r2.mid : '';
+      const guestName   = skipInitials(r1.right);
+      const guestCo     = r2 ? r2.right : '';
+      const location    = formatLocation(locBuffer.join(' '));
+      if (hostName && guestName && location && curDay) {
+        const id = `${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
+        result.push({id, day:curDay, time:curTime, location,
+          host:clean(hostName), hostCompany:clean(hostCompany),
+          guest:clean(guestName), guestCompany:clean(guestCo),
+          presence:'unknown', note:''});
       }
     };
 
-    let i = 0;
-    while (i < rows.length) {
-      const row = rows[i];
-
-      // ── Schedule header ──
-      // The header is a single item at x≈72: "Schedule for Wed, Jun 17 10:30"
-      const headerItem = row.items.find(it =>
-        /Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text)
-      );
+    for (const row of rows) {
+      const headerItem = row.items.find(it => /Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text));
       if (headerItem) {
+        if (dataRows.length===1) emitMeeting(dataRows[0], null);
         const m = headerItem.text.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-        if (m) {
-          curDay  = DAY_MAP[m[1]] || m[1];
-          curTime = m[2];
-          locBuffer = [];
-          dataRows  = [];
-        }
-        i++; continue;
+        if (m) { curDay=DAY_MAP[m[1]]||m[1]; curTime=m[2]; }
+        locBuffer=[]; dataRows=[];
+        continue;
       }
+      if (row.items.every(it=>isMeta(it.text))) continue;
+      if (row.items.some(it=>it.text==='Location') && row.items.some(it=>it.text==='Host')) continue;
+      if (!curDay) continue;
 
-      // ── Skip metadata ──
-      if (row.items.every(it => isMeta(it.text))) { i++; continue; }
-      // Skip column header row
-      if (row.items.some(it => it.text === 'Location') &&
-          row.items.some(it => it.text === 'Host')) { i++; continue; }
+      const leftText  = row.items.filter(it=>it.x<150).map(it=>it.text).join(' ').trim();
+      const midText   = row.items.filter(it=>it.x>=150&&it.x<290).map(it=>it.text).join(' ').trim();
+      const rightText = row.items.filter(it=>it.x>=290).map(it=>it.text).join(' ').trim();
 
-      if (!curDay) { i++; continue; }
-
-      // ── Classify this row ──
-      const leftItems  = row.items.filter(it => it.x < 150);
-      const midItems   = row.items.filter(it => it.x >= 150 && it.x < 290);
-      const rightItems = row.items.filter(it => it.x >= 290);
-
-      const leftText  = leftItems.map(it=>it.text).join(' ').trim();
-      const midText   = midItems.map(it=>it.text).join(' ').trim();
-      const rightText = rightItems.map(it=>it.text).join(' ').trim();
-
-      const hasMid   = midText.length > 0;
-      const hasRight = rightText.length > 0;
-
-      if (hasMid && hasRight) {
-        // This is a "data row" — contains person info
-        dataRows.push({ y: row.y, left: leftText, mid: midText, right: rightText });
-
-        // When we have 2 consecutive data rows, that's one complete meeting
-        // (row 0 = names, row 1 = companies)
-        if (dataRows.length === 2) {
-          const locStr = locBuffer.join(' ');
-          emitMeeting(dataRows[0], dataRows[1], locStr, curDay, curTime);
-          locBuffer = []; // reset location for next meeting
-          dataRows  = [];
-        }
-
-      } else if (hasMid && !hasRight) {
-        // Only mid col — could be part of location block or stray
-        // If it's a left+mid combo, treat mid as location continuation? No.
-        // Just treat as a possible loose data row and add to locBuffer if left present
+      if (midText && rightText) {
+        dataRows.push({mid:midText, right:rightText});
         if (leftText) locBuffer.push(leftText);
-
-      } else {
-        // Left col only (or empty) — part of location description
-        if (leftText && !isMeta(leftText)) {
-          locBuffer.push(leftText);
+        if (dataRows.length===2) {
+          emitMeeting(dataRows[0], dataRows[1]);
+          locBuffer=[]; dataRows=[];
         }
+      } else if (midText && !rightText) {
+        if (leftText) locBuffer.push(leftText);
+      } else {
+        if (leftText && !isMeta(leftText)) locBuffer.push(leftText);
       }
-
-      i++;
     }
-
-    // Flush any remaining single data row (shouldn't happen but just in case)
-    if (dataRows.length === 1) {
-      emitMeeting(dataRows[0], null, locBuffer.join(' '), curDay, curTime);
-    }
+    if (dataRows.length===1) emitMeeting(dataRows[0], null);
   }
 
   hideLoading();
   return result;
 }
 
-// ─── Group items by Y with tolerance ──────────────────────────
-function groupByY(items, tolerance) {
-  const groups = [];
-  items.forEach(item => {
-    const existing = groups.find(g => Math.abs(g.y - item.y) <= tolerance);
-    if (existing) {
-      existing.items.push(item);
-    } else {
-      groups.push({ y: item.y, items: [item] });
-    }
+function groupByY(items, tol) {
+  const groups=[];
+  items.forEach(item=>{
+    const ex=groups.find(g=>Math.abs(g.y-item.y)<=tol);
+    if(ex) ex.items.push(item);
+    else groups.push({y:item.y, items:[item]});
   });
-  // Sort groups top-to-bottom
-  groups.sort((a,b) => b.y - a.y);
-  // Sort items within each group left-to-right
-  groups.forEach(g => g.items.sort((a,b) => a.x - b.x));
+  groups.sort((a,b)=>b.y-a.y);
+  groups.forEach(g=>g.items.sort((a,b)=>a.x-b.x));
   return groups;
 }
-
-// ─── Helpers ──────────────────────────────────────────────────
-function isMeta(s) {
-  if (!s) return true;
-  return /^\d{2}\.\d{2}\.\d{4}/.test(s) ||
-         /^\d+\s*\/\s*\d+$/.test(s) ||
-         s.includes('Business Meetings @') ||
-         /\d+ June.*2026/.test(s) ||
-         /17 June.*20 June/.test(s) ||
-         s === 'Location' || s === 'Host' || s === 'Guest(s)';
+function isMeta(s){
+  if(!s) return true;
+  return /^\d{2}\.\d{2}\.\d{4}/.test(s)||/^\d+\s*\/\s*\d+$/.test(s)||
+    s.includes('Business Meetings @')||/\d+ June.*2026/.test(s)||
+    /17 June.*20 June/.test(s)||s==='Location'||s==='Host'||s==='Guest(s)';
 }
-
-function skipInitials(s) {
-  // Remove leading 1-3 uppercase letter badges like "PC", "MR"
-  if (!s) return '';
-  return s.replace(/^[A-Z]{1,3}\s+/, '').trim();
-}
-
-function formatLocation(raw) {
-  return (raw || '')
-    .replace(/\s+/g,' ')
+function skipInitials(s){return s?s.replace(/^[A-Z]{1,3}\s+/,'').trim():'';}
+function formatLocation(raw){
+  return (raw||'').replace(/\s+/g,' ')
     .replace(/Business\s+France\s*-?\s*3G13\s*-?\s*/i,'BF 3G13 — ')
     .replace(/French\s+Companies\s+Booth\s*-?\s*/i,'Stand ')
     .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*[-–]?\s*/i,'Lounge Hall 7.2 ')
     .replace(/\s+/g,' ').trim();
 }
+function clean(s){return String(s||'').replace(/[⯑◇♦]/g,'').replace(/\s+/g,' ').trim();}
 
-function clean(s) {
-  return String(s||'').replace(/[⯑◇♦]/g,'').replace(/\s+/g,' ').trim();
-}
-
-// ─── File handling ────────────────────────────────────────────
-async function handleFile(input) {
-  if (!input.files[0]) return;
-  await processNewPDF(input.files[0], false);
-  input.value='';
-}
-async function handleReimport(input) {
-  if (!input.files[0]) return;
-  await processNewPDF(input.files[0], true);
-  input.value='';
-}
-async function processNewPDF(file, isReimport) {
-  try {
-    const parsed = await parsePDFFile(file);
-    if (!parsed.length) {
-      alert(`Aucun rendez-vous trouvé dans "${file.name}".\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".`);
-      return;
-    }
-    if (isReimport && meetings.length > 0) {
-      const eIds = new Set(meetings.map(m=>m.id));
-      const nIds = new Set(parsed.map(m=>m.id));
-      pendingImport = {
-        parsed,
-        added:   parsed.filter(m=>!eIds.has(m.id)),
-        removed: meetings.filter(m=>!nIds.has(m.id)),
-        kept:    parsed.filter(m=>eIds.has(m.id))
-      };
+// ─── File handling ─────────────────────────────────────────
+async function handleFile(input){if(!input.files[0])return;await processNewPDF(input.files[0],false);input.value='';}
+async function handleReimport(input){if(!input.files[0])return;await processNewPDF(input.files[0],true);input.value='';}
+async function processNewPDF(file, isReimport){
+  try{
+    const parsed=await parsePDFFile(file);
+    if(!parsed.length){alert(`Aucun rendez-vous trouvé dans "${file.name}".`);return;}
+    if(isReimport&&meetings.length>0){
+      const eIds=new Set(meetings.map(m=>m.id)),nIds=new Set(parsed.map(m=>m.id));
+      pendingImport={parsed,added:parsed.filter(m=>!eIds.has(m.id)),removed:meetings.filter(m=>!nIds.has(m.id)),kept:parsed.filter(m=>eIds.has(m.id))};
       showDiffModal();
-    } else {
-      meetings = parsed;
-      initApp();
-    }
-  } catch(e) {
-    hideLoading();
-    console.error(e);
-    alert('Erreur : '+e.message);
-  }
+    }else{meetings=parsed;initApp();}
+  }catch(e){hideLoading();console.error(e);alert('Erreur : '+e.message);}
 }
-
-function showDiffModal() {
-  const {added,removed,kept}=pendingImport;
+function showDiffModal(){
+  const{added,removed,kept}=pendingImport;
   document.getElementById('diff-summary').innerHTML=`
     <div class="diff-line"><span>RDV maintenus</span><strong>${kept.length}</strong></div>
     <div class="diff-line" style="color:#2e7d32"><span>➕ Nouveaux RDV</span><strong>${added.length}</strong></div>
@@ -468,43 +416,62 @@ function showDiffModal() {
 }
 function closeDiffModal(){document.getElementById('diff-modal').classList.remove('open');pendingImport=null;}
 function applyImport(){
-  const map={};
-  meetings.forEach(m=>map[m.id]=m);
+  const map={};meetings.forEach(m=>map[m.id]=m);
   meetings=pendingImport.parsed.map(m=>{const ex=map[m.id];return ex?{...m,presence:ex.presence,note:ex.note}:m;});
-  closeDiffModal(); initApp();
+  closeDiffModal();initApp();
 }
 
-// ─── UI ───────────────────────────────────────────────────────
+// ─── App init ──────────────────────────────────────────────
 function initApp(){
   document.getElementById('upload-zone').style.display='none';
   document.getElementById('app').style.display='block';
+
+  // Populate time filter
   const times=[...new Set(meetings.map(m=>m.time))].sort();
-  const sel=document.getElementById('time-filter');
-  sel.innerHTML='<option value="">Tous horaires</option>';
-  times.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;sel.appendChild(o);});
+  const tsel=document.getElementById('time-filter');
+  tsel.innerHTML='<option value="">Tous horaires</option>';
+  times.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;tsel.appendChild(o);});
+
+  // Populate location filter — extract unique location prefixes
+  const locs=[...new Set(meetings.map(m=>m.location))].sort();
+  const lsel=document.getElementById('location-filter');
+  lsel.innerHTML='<option value="">Tous lieux</option>';
+  locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l.length>45?l.slice(0,43)+'…':l;lsel.appendChild(o);});
+
   render();
 }
 
+// ─── View switching ────────────────────────────────────────
+function switchView(view, btn){
+  currentView=view;
+  document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-table').style.display  = view==='table'  ?'block':'none';
+  document.getElementById('view-persons').style.display= view==='persons'?'block':'none';
+  if(view==='persons') renderPersons();
+  else render();
+}
+
+// ─── TABLE VIEW render ─────────────────────────────────────
 function render(){
   updateStats();
   const f=getFiltered();
   renderTable(f);
   document.getElementById('row-count').textContent=`${f.length} ligne${f.length>1?'s':''}`;
 }
-
 function getFiltered(){
   let d=[...meetings];
   if(filterDay!=='all')      d=d.filter(m=>m.day===filterDay);
   if(filterPresence!=='all') d=d.filter(m=>m.presence===filterPresence);
   if(filterTime)             d=d.filter(m=>m.time===filterTime);
+  if(filterLoc)              d=d.filter(m=>m.location===filterLoc);
   if(filterSearch){
     const q=filterSearch.toLowerCase();
-    d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany,m.location].some(s=>s.toLowerCase().includes(q)));
+    d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany].some(s=>s.toLowerCase().includes(q)));
   }
   d.sort((a,b)=>{const va=a[sortCol]||'',vb=b[sortCol]||'';return va<vb?-sortDir:va>vb?sortDir:0;});
   return d;
 }
-
 function renderTable(data){
   const tbody=document.getElementById('table-body');
   const empty=document.getElementById('empty-state');
@@ -532,8 +499,112 @@ function renderTable(data){
   }).join('');
 }
 
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// ─── PERSONS VIEW render ───────────────────────────────────
+function buildPersonMap(){
+  // Build map: personKey -> {name, company, role, meetings[]}
+  const map={};
+  const add=(name, company, role, meeting)=>{
+    if(!name) return;
+    const key=name.toLowerCase().trim();
+    if(!map[key]) map[key]={name, company, role, meetings:[]};
+    else if(map[key].role!==role) map[key].role='both';
+    map[key].meetings.push({...meeting, asRole:role});
+  };
+  meetings.forEach(m=>{
+    add(m.host,  m.hostCompany,  'host',  m);
+    add(m.guest, m.guestCompany, 'guest', m);
+  });
+  return map;
+}
 
+function renderPersons(){
+  const map=buildPersonMap();
+  const query=(document.getElementById('person-search').value||'').toLowerCase();
+  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+  const dc={Mer:'day-wed',Jeu:'day-thu',Ven:'day-fri'};
+
+  let persons=Object.values(map);
+
+  // Filter by search
+  if(query) persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
+
+  // Filter by role
+  if(personRole==='host')  persons=persons.filter(p=>p.role==='host'||p.role==='both');
+  if(personRole==='guest') persons=persons.filter(p=>p.role==='guest'||p.role==='both');
+
+  // Sort
+  if(personSort==='name')    persons.sort((a,b)=>a.name.localeCompare(b.name));
+  if(personSort==='total')   persons.sort((a,b)=>b.meetings.length-a.meetings.length);
+  if(personSort==='present') persons.sort((a,b)=>{
+    const pa=a.meetings.filter(m=>m.presence==='present').length;
+    const pb=b.meetings.filter(m=>m.presence==='present').length;
+    return pb-pa;
+  });
+
+  document.getElementById('person-count').textContent=`${persons.length} personne${persons.length>1?'s':''}`;
+
+  const roleLabel={host:'Hôte',guest:'Invité(e)',both:'Hôte & Invité(e)'};
+  const roleClass={host:'role-host',guest:'role-guest',both:'role-both'};
+
+  document.getElementById('persons-grid').innerHTML=persons.map(p=>{
+    const total=p.meetings.length;
+    const present=p.meetings.filter(m=>m.presence==='present').length;
+    const absent=p.meetings.filter(m=>m.presence==='absent').length;
+    const unknown=total-present-absent;
+    const pct=total?Math.round(present/total*100):0;
+
+    // Sort meetings by day+time
+    const sorted=[...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
+
+    const meetingRows=sorted.map(m=>{
+      const dotCls=m.presence==='present'?'present':m.presence==='absent'?'absent':'unknown';
+      return`<div class="pmeet">
+        <div class="pmeet-dot ${dotCls}"></div>
+        <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
+        <span class="pmeet-loc">${esc(m.location)}</span>
+        <span style="font-size:10px;color:var(--text-soft);white-space:nowrap">${m.asRole==='host'?'🎤':'👤'}</span>
+      </div>`;
+    }).join('');
+
+    const key=esc(p.name.toLowerCase().trim());
+    return`<div class="person-card" id="pc-${key}" onclick="toggleCard('pc-${key}')">
+      <div class="person-card-header">
+        <div class="person-card-info">
+          <div class="person-card-name">${esc(p.name)}</div>
+          <div class="person-card-company">${esc(p.company)}</div>
+        </div>
+        <span class="person-role-badge ${roleClass[p.role]||'role-guest'}">${roleLabel[p.role]||p.role}</span>
+      </div>
+      <div class="person-stats">
+        <div class="pstat"><span class="pstat-num">${total}</span><span class="pstat-label">RDV</span></div>
+        <div class="pstat"><span class="pstat-num p">${present}</span><span class="pstat-label">Présent</span></div>
+        <div class="pstat"><span class="pstat-num a">${absent}</span><span class="pstat-label">Absent</span></div>
+        <div class="pstat"><span class="pstat-num" style="color:var(--grey)">${unknown}</span><span class="pstat-label">?</span></div>
+      </div>
+      <div class="person-mini-bar"><div class="person-mini-bar-fill" style="width:${pct}%"></div></div>
+      <div class="person-meetings-list">${meetingRows}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('expanded');
+}
+function setPersonSort(btn){
+  personSort=btn.dataset.psort;
+  document.querySelectorAll('[data-psort]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPersons();
+}
+function setPersonRole(btn){
+  personRole=btn.dataset.prole;
+  document.querySelectorAll('[data-prole]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPersons();
+}
+
+// ─── Shared ────────────────────────────────────────────────
 function updateStats(){
   const t=meetings.length,p=meetings.filter(m=>m.presence==='present').length,a=meetings.filter(m=>m.presence==='absent').length;
   document.getElementById('stat-total').textContent=t;
@@ -543,23 +614,36 @@ function updateStats(){
   document.getElementById('bar-present').style.width=(t?p/t*100:0)+'%';
   document.getElementById('bar-absent').style.width=(t?a/t*100:0)+'%';
 }
-
-function togglePresence(id,val){const m=meetings.find(m=>m.id===id);if(m){m.presence=m.presence===val?'unknown':val;render();}}
+function togglePresence(id,val){
+  const m=meetings.find(m=>m.id===id);
+  if(m){m.presence=m.presence===val?'unknown':val; render(); if(currentView==='persons') renderPersons();}
+}
 function updateNote(id,val){const m=meetings.find(m=>m.id===id);if(m)m.note=val;}
 function setDayFilter(btn){filterDay=btn.dataset.day;document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
 function setPresenceFilter(btn){filterPresence=btn.dataset.presence;document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
-function applyFilters(){filterSearch=document.getElementById('search-input').value;filterTime=document.getElementById('time-filter').value;render();}
+function applyFilters(){
+  filterSearch=document.getElementById('search-input').value;
+  filterTime=document.getElementById('time-filter').value;
+  filterLoc=document.getElementById('location-filter').value;
+  render();
+}
 function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+// ─── Export ────────────────────────────────────────────────
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+
+  // Sheet 1: RDV
   const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
   meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,m.guest,m.guestCompany,pl[m.presence]||'?',m.note]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Planning RDV');
+
+  // Sheet 2: Stats par jour
   const sr=[['Jour','Total','Présents','Absents','Non renseigné','Taux']];
   ['Mer','Jeu','Ven'].forEach(d=>{
     const dm=meetings.filter(m=>m.day===d);
@@ -570,14 +654,30 @@ function exportExcel(){
   sr.push(['TOTAL',t,tp,ta,t-tp-ta,t?((tp/t)*100).toFixed(1)+'%':'-']);
   const ws2=XLSX.utils.aoa_to_sheet(sr);
   ws2['!cols']=[15,10,10,10,14,12].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws2,'Résumé');
+  XLSX.utils.book_append_sheet(wb,ws2,'Résumé par jour');
+
+  // Sheet 3: Par personne
+  const map=buildPersonMap();
+  const pr=[['Nom','Entreprise','Rôle','Total RDV','Présents','Absents','Non renseigné','Taux présence']];
+  Object.values(map).sort((a,b)=>b.meetings.length-a.meetings.length).forEach(p=>{
+    const tot=p.meetings.length;
+    const pres=p.meetings.filter(m=>m.presence==='present').length;
+    const abs=p.meetings.filter(m=>m.presence==='absent').length;
+    pr.push([p.name,p.company,p.role==='both'?'Hôte & Invité':p.role==='host'?'Hôte':'Invité(e)',tot,pres,abs,tot-pres-abs,tot?((pres/tot)*100).toFixed(1)+'%':'-']);
+  });
+  const ws3=XLSX.utils.aoa_to_sheet(pr);
+  ws3['!cols']=[25,28,16,10,10,10,14,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws3,'Par personne');
+
   XLSX.writeFile(wb,`Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+// ─── Loading ───────────────────────────────────────────────
 function showLoading(msg,sub){document.getElementById('loading-text').textContent=msg||'';document.getElementById('loading-sub').textContent=sub||'';document.getElementById('loading').classList.add('show');}
 function updateLoading(msg,sub){document.getElementById('loading-text').textContent=msg;document.getElementById('loading-sub').textContent=sub||'';}
 function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
+// ─── Drag & drop ───────────────────────────────────────────
 const dz=document.getElementById('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
