@@ -275,7 +275,21 @@
       </div>
       <div class="toolbar-sep"></div>
       <select id="time-filter" onchange="applyFilters()"><option value="">Tous horaires</option></select>
-      <select id="location-filter" onchange="applyFilters()"><option value="">Tous lieux</option></select>
+      <div style="position:relative">
+        <button id="loc-btn" class="filter-tab" onclick="toggleLocDropdown(event)" style="min-width:140px;justify-content:space-between;display:flex;gap:8px">
+          <span id="loc-btn-label">Tous lieux</span><span>▾</span>
+        </button>
+        <div id="loc-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--grey-mid);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:280px;max-height:320px;overflow-y:auto;padding:6px">
+          <div style="padding:4px 8px 8px">
+            <input type="search" id="loc-search" placeholder="🔍 Filtrer les lieux…" oninput="filterLocOptions()" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--grey-mid);font-size:12px;outline:none">
+          </div>
+          <div style="display:flex;gap:6px;padding:0 8px 8px">
+            <button onclick="selectAllLocs(true)" style="flex:1;padding:4px;font-size:11px;border-radius:4px;border:1px solid var(--grey-mid);cursor:pointer;background:var(--grey-lt)">Tout cocher</button>
+            <button onclick="selectAllLocs(false)" style="flex:1;padding:4px;font-size:11px;border-radius:4px;border:1px solid var(--grey-mid);cursor:pointer;background:var(--grey-lt)">Tout décocher</button>
+          </div>
+          <div id="loc-options"></div>
+        </div>
+      </div>
       <input type="search" id="search-input" placeholder="🔍 Nom, société…" oninput="applyFilters()">
       <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="row-count"></span>
     </div>
@@ -331,8 +345,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 // ── STATE ──────────────────────────────────────────────────
 let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
-let filterDay='all', filterPresence='all', filterTime='', filterLoc='', filterSearch='';
+let filterDay='all', filterPresence='all', filterTime='', filterLocs=new Set(), filterSearch='';
 let currentView='table', personSort='total', personRole='all';
+let allLocs=[];
 let supabase=null, localMode=false;
 
 // ── SUPABASE SETUP ─────────────────────────────────────────
@@ -607,11 +622,11 @@ function initApp(){
   const tsel=document.getElementById('time-filter');
   tsel.innerHTML='<option value="">Tous horaires</option>';
   times.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;tsel.appendChild(o);});
-  // Locations
+  // Locations — multi-select dropdown
   const locs=[...new Set(meetings.map(m=>m.location))].sort();
-  const lsel=document.getElementById('location-filter');
-  lsel.innerHTML='<option value="">Tous lieux</option>';
-  locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l.length>40?l.slice(0,38)+'…':l;lsel.appendChild(o);});
+  allLocs=locs;
+  filterLocs=new Set(); // empty = show all
+  buildLocOptions(locs);
   render();
 }
 
@@ -636,7 +651,7 @@ function getFiltered(){
   if(filterDay!=='all')d=d.filter(m=>m.day===filterDay);
   if(filterPresence!=='all')d=d.filter(m=>m.presence===filterPresence);
   if(filterTime)d=d.filter(m=>m.time===filterTime);
-  if(filterLoc)d=d.filter(m=>m.location===filterLoc);
+  if(filterLocs.size>0)d=d.filter(m=>filterLocs.has(m.location));
   if(filterSearch){const q=filterSearch.toLowerCase();d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany].some(s=>s.toLowerCase().includes(q)));}
   d.sort((a,b)=>{const va=a[sortCol]||'',vb=b[sortCol]||'';return va<vb?-sortDir:va>vb?sortDir:0;});
   return d;
@@ -762,11 +777,61 @@ async function updateNote(id,val){
 }
 function setDayFilter(btn){filterDay=btn.dataset.day;document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
 function setPresenceFilter(btn){filterPresence=btn.dataset.presence;document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
-function applyFilters(){filterSearch=document.getElementById('search-input').value;filterTime=document.getElementById('time-filter').value;filterLoc=document.getElementById('location-filter').value;render();}
+function applyFilters(){filterSearch=document.getElementById('search-input').value;filterTime=document.getElementById('time-filter').value;render();}
 function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ── EXPORT ─────────────────────────────────────────────────
+// ── LOCATION MULTI-SELECT ──────────────────────────────────
+function buildLocOptions(locs){
+  const container=document.getElementById('loc-options');
+  if(!container)return;
+  container.innerHTML=locs.map(l=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text)" onmouseenter="this.style.background='var(--grey-lt)'" onmouseleave="this.style.background=''">
+      <input type="checkbox" value="${esc(l)}" onchange="toggleLoc(this)" style="cursor:pointer;accent-color:var(--blue)">
+      <span>${esc(l)}</span>
+    </label>`).join('');
+}
+function filterLocOptions(){
+  const q=(document.getElementById('loc-search').value||'').toLowerCase();
+  const filtered=q?allLocs.filter(l=>l.toLowerCase().includes(q)):allLocs;
+  buildLocOptions(filtered);
+  // Re-check already selected
+  document.querySelectorAll('#loc-options input[type=checkbox]').forEach(cb=>{
+    if(filterLocs.has(cb.value))cb.checked=true;
+  });
+}
+function toggleLoc(cb){
+  if(cb.checked)filterLocs.add(cb.value);
+  else filterLocs.delete(cb.value);
+  updateLocBtn();render();
+}
+function selectAllLocs(checked){
+  document.querySelectorAll('#loc-options input[type=checkbox]').forEach(cb=>{
+    cb.checked=checked;
+    if(checked)filterLocs.add(cb.value);else filterLocs.delete(cb.value);
+  });
+  updateLocBtn();render();
+}
+function updateLocBtn(){
+  const n=filterLocs.size;
+  document.getElementById('loc-btn-label').textContent=n===0?'Tous lieux':`${n} lieu${n>1?'x':''} sélectionné${n>1?'s':''}`;
+  document.getElementById('loc-btn').style.background=n>0?'var(--navy)':'';
+  document.getElementById('loc-btn').style.color=n>0?'white':'';
+  document.getElementById('loc-btn').style.borderColor=n>0?'var(--navy)':'';
+}
+function toggleLocDropdown(e){
+  e.stopPropagation();
+  const dd=document.getElementById('loc-dropdown');
+  dd.style.display=dd.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('loc-dropdown');
+  if(dd&&!dd.contains(e.target)&&e.target.id!=='loc-btn'&&!e.target.closest('#loc-btn')){
+    dd.style.display='none';
+  }
+});
+
+
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
