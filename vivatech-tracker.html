@@ -190,44 +190,47 @@ let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterSearch='';
 
 // ═══════════════════════════════════════════════════════════════
-//  PDF PARSER
+// PDF PARSER
 //
-//  From the debug output, each PDF page has this structure:
+// From debug output, each item has EXACT coordinates:
+//   x=72  y=700  "Schedule for Wed, Jun 17 10:30"   ← single string!
+//   x=72  y=647  "Business"
+//   x=177 y=647  "Emma LAZZERI"
+//   x=368 y=647  "Etienne Savin"
+//   x=72  y=632  "France - 3G13"
+//   x=177 y=632  "HORNSWAGGLE"
+//   x=368 y=632  "Business France"
+//   x=72  y=617  "-"
+//   x=72  y=602  "Hornswaggle"
+//   x=72  y=587  "French"
+//   x=177 y=587  "Françoise Nauton-Inglis"
+//   x=368 y=587  "Bianca Fraga"
+//   x=72  y=572  "Companies"
+//   x=177 y=572  "Juliia"
+//   x=368 y=572  "Farmácias São João"
 //
-//  y=700  "Schedule for Wed, Jun 17 10:30"          x≈72
-//  y=669  "Location | Host | Guest(s)"              x≈72,141,332
-//  y=647  "Business | Emma LAZZERI | Etienne Savin" x≈72,177,368
-//  y=632  "France - 3G13 | HORNSWAGGLE | Business France" x≈72,177,368
-//  y=617  "-"                                        x≈72
-//  y=602  "Hornswaggle"                              x≈72
-//  y=587  "French | Françoise Nauton-Inglis | Bianca Fraga"  x≈72,177,368
-//  y=572  "Companies | Juliia | Farmácias São João"  x≈72,177,368
-//  ...
+// STRATEGY:
+// 1. Collect ALL items with their x,y
+// 2. Items at x≈177 (mid col) that are PERSON NAMES start a new meeting
+// 3. The meeting's host = mid-col items in a Y-pair
+// 4. The meeting's guest = right-col items in same Y-pair
+// 5. The meeting's location = ALL left-col (x≈72) items between
+//    the previous meeting's last y and this one's y
 //
-//  So the pattern is:
-//  - LEFT col  (x < 150): location words  
-//  - MID col   (150 ≤ x < 290): host name then company
-//  - RIGHT col (x ≥ 290): guest name then company
-//
-//  A meeting = rows where MID col has a person name.
-//  Location accumulates from LEFT col across consecutive rows
-//  until the next meeting or schedule header.
-//
-//  KEY INSIGHT: rows come in pairs:
-//    Row N:   left="Business"  mid="Emma LAZZERI"        right="Etienne Savin"
-//    Row N+1: left="France-3G13" mid="HORNSWAGGLE"       right="Business France"
-//  So mid[0]=hostName, mid[1]=hostCompany, right[0]=guestName, right[1]=guestCompany
+// KEY: a new meeting begins when x≈177 has a NAME (not a company)
+// We detect this because the FIRST mid-col item after a schedule header
+// or after a complete meeting is a person name.
+// Actually simpler: group items by Y, then for each Y that has BOTH
+// mid(x≈177) AND right(x≈368), that's a "data row" for a meeting.
 // ═══════════════════════════════════════════════════════════════
 
 async function parsePDFFile(file) {
   showLoading('Ouverture du PDF…');
   const ab  = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  const pdf = await pdfjsLib.getDocument({data:ab}).promise;
 
-  const DAY_MAP = { Wed:'Mer', Thu:'Jeu', Fri:'Ven' };
-
-  const result = [];
-  let curDay = null, curTime = null;
+  const DAY_MAP = {Wed:'Mer', Thu:'Jeu', Fri:'Ven'};
+  const result  = [];
 
   for (let pn = 1; pn <= pdf.numPages; pn++) {
     updateLoading(`Page ${pn} / ${pdf.numPages}`, `${result.length} RDV extraits`);
@@ -235,7 +238,7 @@ async function parsePDFFile(file) {
     const page = await pdf.getPage(pn);
     const tc   = await page.getTextContent();
 
-    // 1. Collect all text items with coordinates
+    // Collect all items
     const items = tc.items
       .filter(i => i.str && i.str.trim())
       .map(i => ({
@@ -244,143 +247,168 @@ async function parsePDFFile(file) {
         text: i.str.trim()
       }));
 
-    // 2. Group by Y coordinate (same line = within 2pt tolerance)
-    //    Use a merge strategy: items within 2pt of each other are on same line
-    const lineMap = {};
-    items.forEach(item => {
-      // Find existing Y key within ±2
-      let key = item.y;
-      for (const k of Object.keys(lineMap)) {
-        if (Math.abs(parseInt(k) - item.y) <= 2) { key = parseInt(k); break; }
-      }
-      if (!lineMap[key]) lineMap[key] = [];
-      lineMap[key].push(item);
-    });
+    // Sort top-to-bottom, left-to-right
+    items.sort((a,b) => b.y - a.y || a.x - b.x);
 
-    // 3. Sort lines top-to-bottom, items left-to-right within each line
-    const lines = Object.entries(lineMap)
-      .sort(([ya],[yb]) => parseInt(yb) - parseInt(ya))
-      .map(([y, its]) => {
-        its.sort((a,b) => a.x - b.x);
-        return {
-          y: parseInt(y),
-          items: its,
-          // Column split — from debug: left≈72, mid≈177, right≈368
-          // Threshold: x<150 = left, 150≤x<290 = mid, x≥290 = right
-          left:  its.filter(i => i.x < 150).map(i=>i.text).join(' ').trim(),
-          mid:   its.filter(i => i.x >= 150 && i.x < 290).map(i=>i.text).join(' ').trim(),
-          right: its.filter(i => i.x >= 290).map(i=>i.text).join(' ').trim(),
-          full:  its.map(i=>i.text).join(' ').trim()
-        };
-      });
+    // ── Pass 1: find schedule headers (single text item containing full header) ──
+    // and build per-page structures
+    let curDay = null, curTime = null;
 
-    // 4. Walk lines and extract meetings
-    //
-    //    State machine:
-    //    - When we see "Schedule for ...", update curDay/curTime
-    //    - Accumulate a "current meeting buffer":
-    //        locParts[], midParts[], rightParts[]
-    //    - A new meeting starts when LEFT col has a location keyword
-    //    - Flush the previous meeting buffer on each new location start
+    // Group items by Y (tolerance ±2)
+    const rows = groupByY(items, 2);
 
-    let locParts=[], midParts=[], rightParts=[];
+    // ── Pass 2: walk rows, track state ──
+    // 
+    // State:
+    //   - locParts: left-col strings for current location
+    //   - meetingRows: pairs of {hostName, hostCo, guestName, guestCo}
+    //     (row 1 = names, row 2 = companies)
+    //   - We emit a meeting whenever we have 2 consecutive "data rows"
+    //     with the same pattern (mid+right both present)
 
-    const flushMeeting = () => {
-      if (!midParts.length || !rightParts.length || !curDay) return;
+    // Approach: collect all "data rows" (rows with mid AND right content)
+    // between schedule headers, then pair them up.
 
-      // Skip initial-only entries (e.g. "PC", "MR")
-      const skipInit = arr => {
-        let i = 0;
-        while (i < arr.length && /^[A-Z]{1,3}$/.test(arr[i].trim())) i++;
-        return arr.slice(i);
-      };
+    let dataRows = [];  // {y, left, mid, right}
+    let locBuffer = []; // left-col strings since last data row pair
 
-      const mids   = skipInit(midParts.filter(s=>s && !isMeta(s)));
-      const rights = skipInit(rightParts.filter(s=>s && !isMeta(s)));
+    const emitMeeting = (row1, row2, locStr, day, time) => {
+      // row1 = names row, row2 = companies row
+      const hostName    = skipInitials(row1.mid);
+      const hostCompany = row2 ? row2.mid : '';
+      const guestName   = skipInitials(row1.right);
+      const guestCo     = row2 ? row2.right : '';
+      const location    = formatLocation(locStr);
 
-      const hostName    = mids[0]   || '';
-      const hostCompany = mids[1]   || '';
-      const guestName   = rights[0] || '';
-      const guestCo     = rights[1] || '';
-
-      const location = buildLoc(locParts.filter(s=>s && !isMeta(s)));
-
-      if (hostName && guestName && location) {
-        const id = `${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
+      if (hostName && guestName && location && day) {
+        const id = `${day}|${time}|${location}|${hostName}|${guestName}`;
         result.push({
-          id, day:curDay, time:curTime, location,
-          host:clean(hostName), hostCompany:clean(hostCompany),
-          guest:clean(guestName), guestCompany:clean(guestCo),
-          presence:'unknown', note:''
+          id, day, time, location,
+          host: clean(hostName),   hostCompany: clean(hostCompany),
+          guest: clean(guestName), guestCompany: clean(guestCo),
+          presence: 'unknown', note: ''
         });
       }
-
-      locParts=[]; midParts=[]; rightParts=[];
     };
 
-    for (const line of lines) {
-      const { left, mid, right, full } = line;
+    let i = 0;
+    while (i < rows.length) {
+      const row = rows[i];
 
-      // Schedule header
-      const sh = full.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-      if (sh) {
-        flushMeeting();
-        curDay  = DAY_MAP[sh[1]] || sh[1];
-        curTime = sh[2];
-        continue;
+      // ── Schedule header ──
+      // The header is a single item at x≈72: "Schedule for Wed, Jun 17 10:30"
+      const headerItem = row.items.find(it =>
+        /Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text)
+      );
+      if (headerItem) {
+        const m = headerItem.text.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
+        if (m) {
+          curDay  = DAY_MAP[m[1]] || m[1];
+          curTime = m[2];
+          locBuffer = [];
+          dataRows  = [];
+        }
+        i++; continue;
       }
 
-      // Skip metadata-only lines
-      if (isMeta(full)) continue;
-
+      // ── Skip metadata ──
+      if (row.items.every(it => isMeta(it.text))) { i++; continue; }
       // Skip column header row
-      if (full.includes('Location') && full.includes('Host') && full.includes('Guest')) continue;
+      if (row.items.some(it => it.text === 'Location') &&
+          row.items.some(it => it.text === 'Host')) { i++; continue; }
 
-      // New meeting starts when LEFT col has a location keyword
-      if (left && isLocKeyword(left)) {
-        flushMeeting();
+      if (!curDay) { i++; continue; }
+
+      // ── Classify this row ──
+      const leftItems  = row.items.filter(it => it.x < 150);
+      const midItems   = row.items.filter(it => it.x >= 150 && it.x < 290);
+      const rightItems = row.items.filter(it => it.x >= 290);
+
+      const leftText  = leftItems.map(it=>it.text).join(' ').trim();
+      const midText   = midItems.map(it=>it.text).join(' ').trim();
+      const rightText = rightItems.map(it=>it.text).join(' ').trim();
+
+      const hasMid   = midText.length > 0;
+      const hasRight = rightText.length > 0;
+
+      if (hasMid && hasRight) {
+        // This is a "data row" — contains person info
+        dataRows.push({ y: row.y, left: leftText, mid: midText, right: rightText });
+
+        // When we have 2 consecutive data rows, that's one complete meeting
+        // (row 0 = names, row 1 = companies)
+        if (dataRows.length === 2) {
+          const locStr = locBuffer.join(' ');
+          emitMeeting(dataRows[0], dataRows[1], locStr, curDay, curTime);
+          locBuffer = []; // reset location for next meeting
+          dataRows  = [];
+        }
+
+      } else if (hasMid && !hasRight) {
+        // Only mid col — could be part of location block or stray
+        // If it's a left+mid combo, treat mid as location continuation? No.
+        // Just treat as a possible loose data row and add to locBuffer if left present
+        if (leftText) locBuffer.push(leftText);
+
+      } else {
+        // Left col only (or empty) — part of location description
+        if (leftText && !isMeta(leftText)) {
+          locBuffer.push(leftText);
+        }
       }
 
-      // Accumulate columns
-      if (left)  locParts.push(left);
-      if (mid)   midParts.push(mid);
-      if (right) rightParts.push(right);
+      i++;
     }
 
-    // Flush last meeting on the page
-    flushMeeting();
+    // Flush any remaining single data row (shouldn't happen but just in case)
+    if (dataRows.length === 1) {
+      emitMeeting(dataRows[0], null, locBuffer.join(' '), curDay, curTime);
+    }
   }
 
   hideLoading();
   return result;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// ─── Group items by Y with tolerance ──────────────────────────
+function groupByY(items, tolerance) {
+  const groups = [];
+  items.forEach(item => {
+    const existing = groups.find(g => Math.abs(g.y - item.y) <= tolerance);
+    if (existing) {
+      existing.items.push(item);
+    } else {
+      groups.push({ y: item.y, items: [item] });
+    }
+  });
+  // Sort groups top-to-bottom
+  groups.sort((a,b) => b.y - a.y);
+  // Sort items within each group left-to-right
+  groups.forEach(g => g.items.sort((a,b) => a.x - b.x));
+  return groups;
+}
 
+// ─── Helpers ──────────────────────────────────────────────────
 function isMeta(s) {
   if (!s) return true;
-  return (
-    /^\d{2}\.\d{2}\.\d{4}/.test(s) ||
-    /^\d+\s*\/\s*\d+$/.test(s) ||
-    s.includes('Business Meetings @') ||
-    /\d+ June, 2026/.test(s) ||
-    /17 June.*20 June/.test(s) ||
-    s === 'Location' || s === 'Host' || s === 'Guest(s)'
-  );
+  return /^\d{2}\.\d{2}\.\d{4}/.test(s) ||
+         /^\d+\s*\/\s*\d+$/.test(s) ||
+         s.includes('Business Meetings @') ||
+         /\d+ June.*2026/.test(s) ||
+         /17 June.*20 June/.test(s) ||
+         s === 'Location' || s === 'Host' || s === 'Guest(s)';
 }
 
-function isLocKeyword(s) {
-  return (
-    /^Business(\s+France)?$/i.test(s) ||
-    /^French(\s+Companies)?$/i.test(s) ||
-    /^International(\s+Buyers)?$/i.test(s)
-  );
+function skipInitials(s) {
+  // Remove leading 1-3 uppercase letter badges like "PC", "MR"
+  if (!s) return '';
+  return s.replace(/^[A-Z]{1,3}\s+/, '').trim();
 }
 
-function buildLoc(parts) {
-  return parts.join(' ')
+function formatLocation(raw) {
+  return (raw || '')
     .replace(/\s+/g,' ')
-    .replace(/Business\s+France\s*-\s*3G13\s*-?\s*/i,'BF 3G13 — ')
+    .replace(/Business\s+France\s*-?\s*3G13\s*-?\s*/i,'BF 3G13 — ')
     .replace(/French\s+Companies\s+Booth\s*-?\s*/i,'Stand ')
     .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*[-–]?\s*/i,'Lounge Hall 7.2 ')
     .replace(/\s+/g,' ').trim();
@@ -391,7 +419,6 @@ function clean(s) {
 }
 
 // ─── File handling ────────────────────────────────────────────
-
 async function handleFile(input) {
   if (!input.files[0]) return;
   await processNewPDF(input.files[0], false);
@@ -406,7 +433,7 @@ async function processNewPDF(file, isReimport) {
   try {
     const parsed = await parsePDFFile(file);
     if (!parsed.length) {
-      alert(`Aucun rendez-vous trouvé dans "${file.name}".\n\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".`);
+      alert(`Aucun rendez-vous trouvé dans "${file.name}".\nVérifiez que le PDF contient des pages "Schedule for Wed/Thu/Fri".`);
       return;
     }
     if (isReimport && meetings.length > 0) {
@@ -444,11 +471,10 @@ function applyImport(){
   const map={};
   meetings.forEach(m=>map[m.id]=m);
   meetings=pendingImport.parsed.map(m=>{const ex=map[m.id];return ex?{...m,presence:ex.presence,note:ex.note}:m;});
-  closeDiffModal();initApp();
+  closeDiffModal(); initApp();
 }
 
-// ─── App ──────────────────────────────────────────────────────
-
+// ─── UI ───────────────────────────────────────────────────────
 function initApp(){
   document.getElementById('upload-zone').style.display='none';
   document.getElementById('app').style.display='block';
