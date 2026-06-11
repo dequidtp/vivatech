@@ -6,12 +6,11 @@
 <title>Vivatech 2026 — Suivi RDV</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{--navy:#0d1b2a;--navy2:#1a2e45;--blue:#1565c0;--blue-lt:#1976d2;--accent:#e53935;--gold:#f9a825;--green:#2e7d32;--grey:#90a4ae;--grey-lt:#eceff1;--grey-mid:#cfd8dc;--text:#1a2e45;--text-soft:#546e7a;--surface:#f5f7fa}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--surface);color:var(--text);font-size:13px}
-
-  /* HEADER */
   header{background:var(--navy);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
   .header-left{display:flex;align-items:center;gap:16px}
   .logo-mark{width:32px;height:32px;border-radius:4px;flex-shrink:0;background:linear-gradient(135deg,#002395 33%,#fff 33%,#fff 66%,#ed2939 66%)}
@@ -23,22 +22,39 @@
   .btn-outline{background:transparent;color:white;border:1px solid rgba(255,255,255,.3)}.btn-outline:hover{background:rgba(255,255,255,.1)}
   .btn-success{background:var(--green);color:white}.btn-success:hover{background:#1b5e20}
   .btn-cancel{background:var(--grey-lt);color:var(--text)}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#81c784;display:inline-block;margin-right:4px}
+  .sync-dot.syncing{background:var(--gold);animation:pulse 1s infinite}
+  .sync-dot.error{background:var(--accent)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* SETUP SCREEN */
+  #setup-zone{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
+  .setup-card{background:white;border-radius:16px;padding:40px 48px;box-shadow:0 2px 8px rgba(13,27,42,.1);max-width:520px;width:90%}
+  .setup-card h2{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+  .setup-card p{color:var(--text-soft);line-height:1.6;margin-bottom:20px}
+  .setup-step{background:var(--surface);border-radius:8px;padding:16px;margin-bottom:12px;border-left:3px solid var(--blue-lt)}
+  .setup-step strong{display:block;margin-bottom:4px;color:var(--navy)}
+  .setup-step code{background:var(--grey-lt);padding:2px 6px;border-radius:4px;font-size:11px;font-family:monospace}
+  .input-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .input-group label{font-size:12px;font-weight:600;color:var(--text)}
+  .input-group input{padding:9px 12px;border-radius:6px;border:1px solid var(--grey-mid);font-size:13px;outline:none}
+  .input-group input:focus{border-color:var(--blue-lt)}
+  .setup-actions{display:flex;gap:8px;margin-top:16px}
 
   /* UPLOAD */
-  #upload-zone{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
-  .upload-card{background:white;border-radius:16px;padding:56px 64px;box-shadow:0 2px 8px rgba(13,27,42,.1);text-align:center;max-width:480px;border:2px dashed var(--grey-mid);transition:border-color .2s}
+  #upload-zone{display:none;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
+  #upload-zone.show{display:flex}
+  .upload-card{background:white;border-radius:16px;padding:48px 56px;box-shadow:0 2px 8px rgba(13,27,42,.1);text-align:center;max-width:460px;border:2px dashed var(--grey-mid);transition:border-color .2s}
   .upload-card.dragover{border-color:var(--blue-lt)}
   .upload-icon{font-size:48px;margin-bottom:16px}
   .upload-card h2{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
-  .upload-card p{color:var(--text-soft);line-height:1.6;margin-bottom:24px}
+  .upload-card p{color:var(--text-soft);line-height:1.6;margin-bottom:20px}
   .upload-label{display:inline-flex;align-items:center;gap:8px;background:var(--blue-lt);color:white;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:background .15s}
   .upload-label:hover{background:var(--blue)}
   .upload-hint{color:var(--grey);font-size:11px;margin-top:12px}
 
   /* APP */
   #app{display:none}
-
-  /* STATS BAR */
   .stats-bar{display:flex;gap:16px;padding:10px 20px;background:var(--navy2);color:white;flex-wrap:wrap;align-items:center}
   .stat-item{display:flex;flex-direction:column;align-items:center;min-width:70px}
   .stat-num{font-size:20px;font-weight:700;line-height:1}
@@ -49,27 +65,24 @@
   .presence-bar-track{height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden;display:flex}
   .bar-present{background:#81c784;transition:width .4s}.bar-absent{background:#ef9a9a;transition:width .4s}
 
-  /* TABS */
-  .view-tabs{display:flex;gap:0;background:white;border-bottom:2px solid var(--grey-mid)}
+  .view-tabs{display:flex;background:white;border-bottom:2px solid var(--grey-mid)}
   .view-tab{padding:12px 24px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-soft);border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
   .view-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
   .view-tab:hover:not(.active){color:var(--text);background:var(--grey-lt)}
 
-  /* TOOLBAR */
-  .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .toolbar-sep{width:1px;height:24px;background:var(--grey-mid);flex-shrink:0}
   .filter-tabs{display:flex;gap:2px}
   .filter-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--grey-mid);background:white;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap}
   .filter-tab.active{background:var(--navy);color:white;border-color:var(--navy)}.filter-tab:hover:not(.active){background:var(--grey-lt)}
   input[type=search],select{padding:7px 12px;border-radius:6px;border:1px solid var(--grey-mid);font-size:12px;color:var(--text);background:white;outline:none}
   input[type=search]:focus,select:focus{border-color:var(--blue-lt)}
-  input[type=search]{width:200px}
-  select{max-width:200px}
+  input[type=search]{width:180px}
+  select{max-width:180px}
 
-  /* TABLE VIEW */
-  #view-table{display:block}
-  #view-persons{display:none}
-  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 260px)}
+  /* TABLE */
+  #view-table{display:block}#view-persons{display:none}
+  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 265px)}
   table{width:100%;border-collapse:collapse}
   thead th{position:sticky;top:0;z-index:10;background:var(--navy);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
   thead th:hover{background:var(--navy2)}
@@ -93,10 +106,10 @@
   .note-input:hover{background:var(--grey-lt)}.note-input:focus{background:white;border:1px solid var(--blue-lt)}
   .empty-state{text-align:center;padding:64px 32px;color:var(--text-soft)}
 
-  /* PERSONS VIEW */
-  .persons-container{padding:20px;overflow-y:auto;max-height:calc(100vh - 260px)}
-  .persons-toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  /* PERSONS */
+  .persons-container{padding:20px;overflow-y:auto;max-height:calc(100vh - 265px)}
+  .persons-toolbar{background:white;border-bottom:1px solid var(--grey-mid);padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
   .person-card{background:white;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(13,27,42,.08);border:1px solid var(--grey-mid);cursor:pointer;transition:all .15s}
   .person-card:hover{box-shadow:0 4px 12px rgba(13,27,42,.15);border-color:var(--blue-lt);transform:translateY(-1px)}
   .person-card.expanded{border-color:var(--blue-lt)}
@@ -105,9 +118,7 @@
   .person-card-name{font-weight:700;font-size:14px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .person-card-company{font-size:11px;color:var(--text-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .person-role-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;flex-shrink:0}
-  .role-host{background:#e3f2fd;color:#1565c0}
-  .role-guest{background:#f3e5f5;color:#7b1fa2}
-  .role-both{background:#fff3e0;color:#e65100}
+  .role-host{background:#e3f2fd;color:#1565c0}.role-guest{background:#f3e5f5;color:#7b1fa2}.role-both{background:#fff3e0;color:#e65100}
   .person-stats{display:flex;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--grey-lt)}
   .pstat{display:flex;flex-direction:column;align-items:center;flex:1}
   .pstat-num{font-size:18px;font-weight:700;color:var(--navy)}
@@ -122,7 +133,6 @@
   .pmeet-loc{color:var(--text-soft);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pmeet-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
   .pmeet-dot.present{background:var(--green)}.pmeet-dot.absent{background:var(--accent)}.pmeet-dot.unknown{background:var(--grey)}
-  .persons-sort{display:flex;gap:2px}
 
   /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.7);z-index:200;align-items:center;justify-content:center}
@@ -145,7 +155,7 @@
 
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Analyse du PDF…</div>
+  <div class="loading-text" id="loading-text">Chargement…</div>
   <div class="loading-sub" id="loading-sub"></div>
 </div>
 
@@ -167,12 +177,54 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer">⬆ Réimporter PDF</label>
+    <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
+      <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
+    </span>
+    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer" id="reimport-btn" style="display:none">⬆ Réimporter PDF</label>
     <input type="file" id="reimport-input" accept=".pdf" style="display:none" onchange="handleReimport(this)">
-    <button class="btn btn-success" onclick="exportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-success" onclick="exportExcel()" id="export-btn" style="display:none">⬇ Export Excel</button>
   </div>
 </header>
 
+<!-- SETUP SCREEN -->
+<div id="setup-zone">
+  <div class="setup-card">
+    <div class="upload-icon" style="font-size:40px;margin-bottom:12px">🔗</div>
+    <h2>Configuration Supabase</h2>
+    <p>Pour que les données soient partagées et persistantes entre tous les utilisateurs, connectez votre base Supabase. Opération unique — les paramètres seront mémorisés.</p>
+
+    <div class="setup-step">
+      <strong>① Créer un compte gratuit</strong>
+      Allez sur <a href="https://supabase.com" target="_blank" style="color:var(--blue)">supabase.com</a> → New Project
+    </div>
+    <div class="setup-step">
+      <strong>② Créer la table SQL</strong>
+      Dans l'éditeur SQL de Supabase, exécutez :<br><br>
+      <code>create table meetings (id text primary key, day text, time text, location text, host text, "hostCompany" text, guest text, "guestCompany" text, presence text default 'unknown', note text default '');</code>
+    </div>
+    <div class="setup-step">
+      <strong>③ Récupérer vos clés</strong>
+      Project Settings → API → URL et <em>anon public</em> key
+    </div>
+
+    <div class="input-group">
+      <label>URL Supabase</label>
+      <input type="text" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co" oninput="saveConfig()">
+    </div>
+    <div class="input-group">
+      <label>Clé API (anon public)</label>
+      <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." oninput="saveConfig()">
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn btn-primary" onclick="connectSupabase()">🔌 Connecter</button>
+      <button class="btn btn-cancel" onclick="useLocalMode()">Utiliser sans partage (local)</button>
+    </div>
+    <p id="setup-error" style="color:var(--accent);font-size:12px;margin-top:12px;display:none"></p>
+  </div>
+</div>
+
+<!-- UPLOAD SCREEN -->
 <div id="upload-zone">
   <div class="upload-card" id="drop-zone">
     <div class="upload-icon">📋</div>
@@ -184,8 +236,8 @@
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
-  <!-- STATS BAR -->
   <div class="stats-bar">
     <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total RDV</span></div>
     <div class="stat-item present"><span class="stat-num" id="stat-present">0</span><span class="stat-label">Présents</span></div>
@@ -200,13 +252,12 @@
     </div>
   </div>
 
-  <!-- VIEW TABS -->
   <div class="view-tabs">
-    <button class="view-tab active" onclick="switchView('table', this)">📋 Rendez-vous</button>
-    <button class="view-tab" onclick="switchView('persons', this)">👤 Par personne</button>
+    <button class="view-tab active" onclick="switchView('table',this)">📋 Rendez-vous</button>
+    <button class="view-tab" onclick="switchView('persons',this)">👤 Par personne</button>
   </div>
 
-  <!-- ─── TABLE VIEW ─── -->
+  <!-- TABLE VIEW -->
   <div id="view-table">
     <div class="toolbar">
       <div class="filter-tabs">
@@ -249,13 +300,13 @@
     </div>
   </div>
 
-  <!-- ─── PERSONS VIEW ─── -->
+  <!-- PERSONS VIEW -->
   <div id="view-persons" style="display:none">
     <div class="persons-toolbar">
-      <input type="search" id="person-search" placeholder="🔍 Rechercher une personne ou société…" oninput="renderPersons()" style="width:260px">
+      <input type="search" id="person-search" placeholder="🔍 Personne ou société…" oninput="renderPersons()" style="width:220px">
       <div class="toolbar-sep"></div>
-      <span style="font-size:12px;color:var(--text-soft)">Trier par :</span>
-      <div class="persons-sort filter-tabs">
+      <span style="font-size:12px;color:var(--text-soft)">Trier :</span>
+      <div class="filter-tabs">
         <button class="filter-tab active" data-psort="total" onclick="setPersonSort(this)">Nb RDV</button>
         <button class="filter-tab" data-psort="name" onclick="setPersonSort(this)">Nom</button>
         <button class="filter-tab" data-psort="present" onclick="setPersonSort(this)">Présents</button>
@@ -277,113 +328,190 @@
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// ── STATE ──────────────────────────────────────────────────
 let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterLoc='', filterSearch='';
-let currentView='table';
-let personSort='total', personRole='all';
+let currentView='table', personSort='total', personRole='all';
+let supabase=null, localMode=false;
 
-// ═══════════════════════════════════════════════════════════════
-// PDF PARSER — based on exact coordinates from debug:
-//   x≈72  = left col (location)
-//   x≈177 = mid col  (host)
-//   x≈368 = right col (guest)
-// Meetings come in pairs of rows: names row then companies row
-// ═══════════════════════════════════════════════════════════════
-async function parsePDFFile(file) {
+// ── SUPABASE SETUP ─────────────────────────────────────────
+function saveConfig(){
+  const url=document.getElementById('sb-url').value.trim();
+  const key=document.getElementById('sb-key').value.trim();
+  if(url) localStorage.setItem('sb_url',url);
+  if(key) localStorage.setItem('sb_key',key);
+}
+
+async function connectSupabase(){
+  const url=document.getElementById('sb-url').value.trim()||localStorage.getItem('sb_url');
+  const key=document.getElementById('sb-key').value.trim()||localStorage.getItem('sb_key');
+  if(!url||!key){showSetupError('Renseignez l\'URL et la clé API.');return;}
+  showLoading('Connexion à Supabase…');
+  try{
+    supabase=window.supabase.createClient(url,key);
+    // Test connection
+    const {error}=await supabase.from('meetings').select('id').limit(1);
+    if(error) throw new Error(error.message);
+    localStorage.setItem('sb_url',url);
+    localStorage.setItem('sb_key',key);
+    hideLoading();
+    await loadFromSupabase();
+  }catch(e){
+    hideLoading();
+    showSetupError('Erreur de connexion : '+e.message+'\n\nVérifiez l\'URL, la clé et que la table "meetings" existe.');
+  }
+}
+
+function showSetupError(msg){
+  const el=document.getElementById('setup-error');
+  el.textContent=msg; el.style.display='block';
+}
+
+function useLocalMode(){
+  localMode=true;
+  document.getElementById('setup-zone').style.display='none';
+  document.getElementById('upload-zone').classList.add('show');
+  document.getElementById('reimport-btn').style.display='flex';
+  document.getElementById('export-btn').style.display='flex';
+}
+
+async function loadFromSupabase(){
+  showLoading('Chargement des données…');
+  try{
+    const{data,error}=await supabase.from('meetings').select('*');
+    if(error) throw error;
+    if(!data||data.length===0){
+      // No data yet — show upload screen
+      hideLoading();
+      document.getElementById('setup-zone').style.display='none';
+      document.getElementById('upload-zone').classList.add('show');
+      document.getElementById('reimport-btn').style.display='flex';
+      document.getElementById('export-btn').style.display='flex';
+      document.getElementById('sync-status').style.display='flex';
+      setSyncStatus('ok','Connecté');
+    }else{
+      meetings=data.map(r=>({
+        id:r.id, day:r.day, time:r.time, location:r.location,
+        host:r.host, hostCompany:r.hostCompany||'',
+        guest:r.guest, guestCompany:r.guestCompany||'',
+        presence:r.presence||'unknown', note:r.note||''
+      }));
+      hideLoading();
+      document.getElementById('setup-zone').style.display='none';
+      document.getElementById('reimport-btn').style.display='flex';
+      document.getElementById('export-btn').style.display='flex';
+      document.getElementById('sync-status').style.display='flex';
+      setSyncStatus('ok','Synchronisé');
+      initApp();
+    }
+    // Subscribe to realtime changes
+    subscribeRealtime();
+  }catch(e){
+    hideLoading();
+    showSetupError('Erreur de chargement : '+e.message);
+    document.getElementById('setup-zone').style.display='flex';
+  }
+}
+
+function subscribeRealtime(){
+  if(!supabase) return;
+  supabase.channel('meetings-changes')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'meetings'},payload=>{
+      const m=meetings.find(m=>m.id===payload.new.id);
+      if(m){
+        m.presence=payload.new.presence;
+        m.note=payload.new.note;
+        render();
+        if(currentView==='persons') renderPersons();
+        setSyncStatus('ok','Synchronisé');
+      }
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'meetings'},()=>{
+      // On insert batch, just reload
+      loadFromSupabase();
+    })
+    .subscribe();
+}
+
+function setSyncStatus(state, text){
+  document.getElementById('sync-dot').className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  document.getElementById('sync-text').textContent=text;
+}
+
+// ── PDF PARSER ─────────────────────────────────────────────
+async function parsePDFFile(file){
   showLoading('Ouverture du PDF…');
-  const ab  = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data:ab}).promise;
-  const DAY_MAP = {Wed:'Mer', Thu:'Jeu', Fri:'Ven'};
-  const result  = [];
-
-  for (let pn = 1; pn <= pdf.numPages; pn++) {
-    updateLoading(`Page ${pn} / ${pdf.numPages}`, `${result.length} RDV extraits`);
-    const page = await pdf.getPage(pn);
-    const tc   = await page.getTextContent();
-
-    const items = tc.items
-      .filter(i => i.str && i.str.trim())
-      .map(i => ({x:Math.round(i.transform[4]), y:Math.round(i.transform[5]), text:i.str.trim()}));
-
-    items.sort((a,b) => b.y-a.y || a.x-b.x);
-    const rows = groupByY(items, 2);
-
-    let curDay=null, curTime=null;
-    let locBuffer=[], dataRows=[];
-
-    const emitMeeting = (r1, r2) => {
-      const hostName    = skipInitials(r1.mid);
-      const hostCompany = r2 ? r2.mid : '';
-      const guestName   = skipInitials(r1.right);
-      const guestCo     = r2 ? r2.right : '';
-      const location    = formatLocation(locBuffer.join(' '));
-      if (hostName && guestName && location && curDay) {
-        const id = `${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
-        result.push({id, day:curDay, time:curTime, location,
-          host:clean(hostName), hostCompany:clean(hostCompany),
-          guest:clean(guestName), guestCompany:clean(guestCo),
-          presence:'unknown', note:''});
+  const ab=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+  const DAY_MAP={Wed:'Mer',Thu:'Jeu',Fri:'Ven'};
+  const result=[];
+  for(let pn=1;pn<=pdf.numPages;pn++){
+    updateLoading(`Page ${pn} / ${pdf.numPages}`,`${result.length} RDV extraits`);
+    const page=await pdf.getPage(pn);
+    const tc=await page.getTextContent();
+    const items=tc.items.filter(i=>i.str&&i.str.trim())
+      .map(i=>({x:Math.round(i.transform[4]),y:Math.round(i.transform[5]),text:i.str.trim()}));
+    items.sort((a,b)=>b.y-a.y||a.x-b.x);
+    const rows=groupByY(items,2);
+    let curDay=null,curTime=null,locBuffer=[],dataRows=[];
+    const emit=(r1,r2)=>{
+      const hostName=skipInitials(r1.mid),hostCo=r2?r2.mid:'';
+      const guestName=skipInitials(r1.right),guestCo=r2?r2.right:'';
+      const location=formatLocation(locBuffer.join(' '));
+      if(hostName&&guestName&&location&&curDay){
+        const id=`${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
+        result.push({id,day:curDay,time:curTime,location,
+          host:clean(hostName),hostCompany:clean(hostCo),
+          guest:clean(guestName),guestCompany:clean(guestCo),
+          presence:'unknown',note:''});
       }
     };
-
-    for (const row of rows) {
-      const headerItem = row.items.find(it => /Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text));
-      if (headerItem) {
-        if (dataRows.length===1) emitMeeting(dataRows[0], null);
-        const m = headerItem.text.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-        if (m) { curDay=DAY_MAP[m[1]]||m[1]; curTime=m[2]; }
-        locBuffer=[]; dataRows=[];
-        continue;
+    for(const row of rows){
+      const hi=row.items.find(it=>/Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text));
+      if(hi){
+        if(dataRows.length===1)emit(dataRows[0],null);
+        const m=hi.text.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
+        if(m){curDay=DAY_MAP[m[1]]||m[1];curTime=m[2];}
+        locBuffer=[];dataRows=[];continue;
       }
-      if (row.items.every(it=>isMeta(it.text))) continue;
-      if (row.items.some(it=>it.text==='Location') && row.items.some(it=>it.text==='Host')) continue;
-      if (!curDay) continue;
-
-      const leftText  = row.items.filter(it=>it.x<150).map(it=>it.text).join(' ').trim();
-      const midText   = row.items.filter(it=>it.x>=150&&it.x<290).map(it=>it.text).join(' ').trim();
-      const rightText = row.items.filter(it=>it.x>=290).map(it=>it.text).join(' ').trim();
-
-      if (midText && rightText) {
-        dataRows.push({mid:midText, right:rightText});
-        if (leftText) locBuffer.push(leftText);
-        if (dataRows.length===2) {
-          emitMeeting(dataRows[0], dataRows[1]);
-          locBuffer=[]; dataRows=[];
-        }
-      } else if (midText && !rightText) {
-        if (leftText) locBuffer.push(leftText);
-      } else {
-        if (leftText && !isMeta(leftText)) locBuffer.push(leftText);
-      }
+      if(row.items.every(it=>isMeta(it.text)))continue;
+      if(row.items.some(it=>it.text==='Location')&&row.items.some(it=>it.text==='Host'))continue;
+      if(!curDay)continue;
+      const lt=row.items.filter(it=>it.x<150).map(it=>it.text).join(' ').trim();
+      const mt=row.items.filter(it=>it.x>=150&&it.x<290).map(it=>it.text).join(' ').trim();
+      const rt=row.items.filter(it=>it.x>=290).map(it=>it.text).join(' ').trim();
+      if(mt&&rt){
+        dataRows.push({mid:mt,right:rt});
+        if(lt)locBuffer.push(lt);
+        if(dataRows.length===2){emit(dataRows[0],dataRows[1]);locBuffer=[];dataRows=[];}
+      }else if(mt&&!rt){if(lt)locBuffer.push(lt);}
+      else{if(lt&&!isMeta(lt))locBuffer.push(lt);}
     }
-    if (dataRows.length===1) emitMeeting(dataRows[0], null);
+    if(dataRows.length===1)emit(dataRows[0],null);
   }
-
   hideLoading();
   return result;
 }
 
-function groupByY(items, tol) {
-  const groups=[];
+function groupByY(items,tol){
+  const g=[];
   items.forEach(item=>{
-    const ex=groups.find(g=>Math.abs(g.y-item.y)<=tol);
-    if(ex) ex.items.push(item);
-    else groups.push({y:item.y, items:[item]});
+    const ex=g.find(r=>Math.abs(r.y-item.y)<=tol);
+    if(ex)ex.items.push(item);else g.push({y:item.y,items:[item]});
   });
-  groups.sort((a,b)=>b.y-a.y);
-  groups.forEach(g=>g.items.sort((a,b)=>a.x-b.x));
-  return groups;
+  g.sort((a,b)=>b.y-a.y);g.forEach(r=>r.items.sort((a,b)=>a.x-b.x));
+  return g;
 }
 function isMeta(s){
-  if(!s) return true;
-  return /^\d{2}\.\d{2}\.\d{4}/.test(s)||/^\d+\s*\/\s*\d+$/.test(s)||
+  if(!s)return true;
+  return/^\d{2}\.\d{2}\.\d{4}/.test(s)||/^\d+\s*\/\s*\d+$/.test(s)||
     s.includes('Business Meetings @')||/\d+ June.*2026/.test(s)||
     /17 June.*20 June/.test(s)||s==='Location'||s==='Host'||s==='Guest(s)';
 }
 function skipInitials(s){return s?s.replace(/^[A-Z]{1,3}\s+/,'').trim():'';}
 function formatLocation(raw){
-  return (raw||'').replace(/\s+/g,' ')
+  return(raw||'').replace(/\s+/g,' ')
     .replace(/Business\s+France\s*-?\s*3G13\s*-?\s*/i,'BF 3G13 — ')
     .replace(/French\s+Companies\s+Booth\s*-?\s*/i,'Stand ')
     .replace(/International\s+Buyers\s+Lounge\s+by\s+Business\s+France\s*[-–]\s*Hall\s*7\.2\s*[:-]\s*Business\s*Plaza\s*[-–]?\s*/i,'Lounge Hall 7.2 ')
@@ -391,20 +519,70 @@ function formatLocation(raw){
 }
 function clean(s){return String(s||'').replace(/[⯑◇♦]/g,'').replace(/\s+/g,' ').trim();}
 
-// ─── File handling ─────────────────────────────────────────
+// ── FILE HANDLING ──────────────────────────────────────────
 async function handleFile(input){if(!input.files[0])return;await processNewPDF(input.files[0],false);input.value='';}
 async function handleReimport(input){if(!input.files[0])return;await processNewPDF(input.files[0],true);input.value='';}
-async function processNewPDF(file, isReimport){
+
+async function processNewPDF(file,isReimport){
   try{
     const parsed=await parsePDFFile(file);
-    if(!parsed.length){alert(`Aucun rendez-vous trouvé dans "${file.name}".`);return;}
+    if(!parsed.length){alert(`Aucun rendez-vous trouvé.`);return;}
     if(isReimport&&meetings.length>0){
       const eIds=new Set(meetings.map(m=>m.id)),nIds=new Set(parsed.map(m=>m.id));
-      pendingImport={parsed,added:parsed.filter(m=>!eIds.has(m.id)),removed:meetings.filter(m=>!nIds.has(m.id)),kept:parsed.filter(m=>eIds.has(m.id))};
+      pendingImport={parsed,
+        added:parsed.filter(m=>!eIds.has(m.id)),
+        removed:meetings.filter(m=>!nIds.has(m.id)),
+        kept:parsed.filter(m=>eIds.has(m.id))};
       showDiffModal();
-    }else{meetings=parsed;initApp();}
+    }else{
+      await saveToBackend(parsed);
+    }
   }catch(e){hideLoading();console.error(e);alert('Erreur : '+e.message);}
 }
+
+async function saveToBackend(data){
+  if(localMode){
+    meetings=data;initApp();return;
+  }
+  showLoading('Sauvegarde dans Supabase…',`${data.length} RDV`);
+  try{
+    // Upsert all — preserving existing presence/note
+    const existingMap={};
+    meetings.forEach(m=>existingMap[m.id]=m);
+    const toUpsert=data.map(m=>{
+      const ex=existingMap[m.id];
+      return{
+        id:m.id, day:m.day, time:m.time, location:m.location,
+        host:m.host, hostCompany:m.hostCompany,
+        guest:m.guest, guestCompany:m.guestCompany,
+        presence:ex?ex.presence:'unknown',
+        note:ex?ex.note:''
+      };
+    });
+    // Delete removed meetings
+    const newIds=new Set(data.map(m=>m.id));
+    const toDelete=meetings.filter(m=>!newIds.has(m.id)).map(m=>m.id);
+    if(toDelete.length>0){
+      await supabase.from('meetings').delete().in('id',toDelete);
+    }
+    // Upsert in batches of 500
+    for(let i=0;i<toUpsert.length;i+=500){
+      const batch=toUpsert.slice(i,i+500);
+      updateLoading(`Sauvegarde…`,`${i+batch.length} / ${toUpsert.length}`);
+      const{error}=await supabase.from('meetings').upsert(batch);
+      if(error)throw error;
+    }
+    meetings=toUpsert;
+    hideLoading();
+    setSyncStatus('ok','Synchronisé');
+    initApp();
+  }catch(e){
+    hideLoading();
+    setSyncStatus('error','Erreur sync');
+    alert('Erreur de sauvegarde : '+e.message);
+  }
+}
+
 function showDiffModal(){
   const{added,removed,kept}=pendingImport;
   document.getElementById('diff-summary').innerHTML=`
@@ -415,44 +593,38 @@ function showDiffModal(){
   document.getElementById('diff-modal').classList.add('open');
 }
 function closeDiffModal(){document.getElementById('diff-modal').classList.remove('open');pendingImport=null;}
-function applyImport(){
-  const map={};meetings.forEach(m=>map[m.id]=m);
-  meetings=pendingImport.parsed.map(m=>{const ex=map[m.id];return ex?{...m,presence:ex.presence,note:ex.note}:m;});
-  closeDiffModal();initApp();
+async function applyImport(){
+  closeDiffModal();
+  await saveToBackend(pendingImport.parsed);
 }
 
-// ─── App init ──────────────────────────────────────────────
+// ── APP INIT ───────────────────────────────────────────────
 function initApp(){
-  document.getElementById('upload-zone').style.display='none';
+  document.getElementById('upload-zone').classList.remove('show');
   document.getElementById('app').style.display='block';
-
-  // Populate time filter
+  // Times
   const times=[...new Set(meetings.map(m=>m.time))].sort();
   const tsel=document.getElementById('time-filter');
   tsel.innerHTML='<option value="">Tous horaires</option>';
   times.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;tsel.appendChild(o);});
-
-  // Populate location filter — extract unique location prefixes
+  // Locations
   const locs=[...new Set(meetings.map(m=>m.location))].sort();
   const lsel=document.getElementById('location-filter');
   lsel.innerHTML='<option value="">Tous lieux</option>';
-  locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l.length>45?l.slice(0,43)+'…':l;lsel.appendChild(o);});
-
+  locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l.length>40?l.slice(0,38)+'…':l;lsel.appendChild(o);});
   render();
 }
 
-// ─── View switching ────────────────────────────────────────
-function switchView(view, btn){
+// ── VIEW SWITCHING ─────────────────────────────────────────
+function switchView(view,btn){
   currentView=view;
-  document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('view-table').style.display  = view==='table'  ?'block':'none';
-  document.getElementById('view-persons').style.display= view==='persons'?'block':'none';
-  if(view==='persons') renderPersons();
-  else render();
+  document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('view-table').style.display=view==='table'?'block':'none';
+  document.getElementById('view-persons').style.display=view==='persons'?'block':'none';
+  if(view==='persons')renderPersons();else render();
 }
 
-// ─── TABLE VIEW render ─────────────────────────────────────
+// ── TABLE RENDER ───────────────────────────────────────────
 function render(){
   updateStats();
   const f=getFiltered();
@@ -461,14 +633,11 @@ function render(){
 }
 function getFiltered(){
   let d=[...meetings];
-  if(filterDay!=='all')      d=d.filter(m=>m.day===filterDay);
-  if(filterPresence!=='all') d=d.filter(m=>m.presence===filterPresence);
-  if(filterTime)             d=d.filter(m=>m.time===filterTime);
-  if(filterLoc)              d=d.filter(m=>m.location===filterLoc);
-  if(filterSearch){
-    const q=filterSearch.toLowerCase();
-    d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany].some(s=>s.toLowerCase().includes(q)));
-  }
+  if(filterDay!=='all')d=d.filter(m=>m.day===filterDay);
+  if(filterPresence!=='all')d=d.filter(m=>m.presence===filterPresence);
+  if(filterTime)d=d.filter(m=>m.time===filterTime);
+  if(filterLoc)d=d.filter(m=>m.location===filterLoc);
+  if(filterSearch){const q=filterSearch.toLowerCase();d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany].some(s=>s.toLowerCase().includes(q)));}
   d.sort((a,b)=>{const va=a[sortCol]||'',vb=b[sortCol]||'';return va<vb?-sortDir:va>vb?sortDir:0;});
   return d;
 }
@@ -499,112 +668,68 @@ function renderTable(data){
   }).join('');
 }
 
-// ─── PERSONS VIEW render ───────────────────────────────────
+// ── PERSONS RENDER ─────────────────────────────────────────
 function buildPersonMap(){
-  // Build map: personKey -> {name, company, role, meetings[]}
   const map={};
-  const add=(name, company, role, meeting)=>{
-    if(!name) return;
+  const add=(name,company,role,meeting)=>{
+    if(!name)return;
     const key=name.toLowerCase().trim();
-    if(!map[key]) map[key]={name, company, role, meetings:[]};
-    else if(map[key].role!==role) map[key].role='both';
-    map[key].meetings.push({...meeting, asRole:role});
+    if(!map[key])map[key]={name,company,role,meetings:[]};
+    else if(map[key].role!==role)map[key].role='both';
+    map[key].meetings.push({...meeting,asRole:role});
   };
-  meetings.forEach(m=>{
-    add(m.host,  m.hostCompany,  'host',  m);
-    add(m.guest, m.guestCompany, 'guest', m);
-  });
+  meetings.forEach(m=>{add(m.host,m.hostCompany,'host',m);add(m.guest,m.guestCompany,'guest',m);});
   return map;
 }
-
 function renderPersons(){
   const map=buildPersonMap();
   const query=(document.getElementById('person-search').value||'').toLowerCase();
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
-  const dc={Mer:'day-wed',Jeu:'day-thu',Ven:'day-fri'};
-
   let persons=Object.values(map);
-
-  // Filter by search
-  if(query) persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
-
-  // Filter by role
-  if(personRole==='host')  persons=persons.filter(p=>p.role==='host'||p.role==='both');
-  if(personRole==='guest') persons=persons.filter(p=>p.role==='guest'||p.role==='both');
-
-  // Sort
-  if(personSort==='name')    persons.sort((a,b)=>a.name.localeCompare(b.name));
-  if(personSort==='total')   persons.sort((a,b)=>b.meetings.length-a.meetings.length);
-  if(personSort==='present') persons.sort((a,b)=>{
-    const pa=a.meetings.filter(m=>m.presence==='present').length;
-    const pb=b.meetings.filter(m=>m.presence==='present').length;
-    return pb-pa;
-  });
-
+  if(query)persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
+  if(personRole==='host')persons=persons.filter(p=>p.role==='host'||p.role==='both');
+  if(personRole==='guest')persons=persons.filter(p=>p.role==='guest'||p.role==='both');
+  if(personSort==='name')persons.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(personSort==='total')persons.sort((a,b)=>b.meetings.length-a.meetings.length);
+  else if(personSort==='present')persons.sort((a,b)=>b.meetings.filter(m=>m.presence==='present').length-a.meetings.filter(m=>m.presence==='present').length);
   document.getElementById('person-count').textContent=`${persons.length} personne${persons.length>1?'s':''}`;
-
-  const roleLabel={host:'Hôte',guest:'Invité(e)',both:'Hôte & Invité(e)'};
-  const roleClass={host:'role-host',guest:'role-guest',both:'role-both'};
-
+  const rl={host:'Hôte',guest:'Invité(e)',both:'Hôte & Invité'},rc={host:'role-host',guest:'role-guest',both:'role-both'};
   document.getElementById('persons-grid').innerHTML=persons.map(p=>{
-    const total=p.meetings.length;
-    const present=p.meetings.filter(m=>m.presence==='present').length;
-    const absent=p.meetings.filter(m=>m.presence==='absent').length;
-    const unknown=total-present-absent;
-    const pct=total?Math.round(present/total*100):0;
-
-    // Sort meetings by day+time
+    const tot=p.meetings.length,pres=p.meetings.filter(m=>m.presence==='present').length;
+    const abs=p.meetings.filter(m=>m.presence==='absent').length,unk=tot-pres-abs;
+    const pct=tot?Math.round(pres/tot*100):0;
     const sorted=[...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
-
-    const meetingRows=sorted.map(m=>{
-      const dotCls=m.presence==='present'?'present':m.presence==='absent'?'absent':'unknown';
-      return`<div class="pmeet">
-        <div class="pmeet-dot ${dotCls}"></div>
-        <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
-        <span class="pmeet-loc">${esc(m.location)}</span>
-        <span style="font-size:10px;color:var(--text-soft);white-space:nowrap">${m.asRole==='host'?'🎤':'👤'}</span>
-      </div>`;
-    }).join('');
-
-    const key=esc(p.name.toLowerCase().trim());
+    const meetRows=sorted.map(m=>`<div class="pmeet">
+      <div class="pmeet-dot ${m.presence}"></div>
+      <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
+      <span class="pmeet-loc">${esc(m.location)}</span>
+      <span style="font-size:10px;color:var(--text-soft)">${m.asRole==='host'?'🎤':'👤'}</span>
+    </div>`).join('');
+    const key=esc(p.name.toLowerCase().trim().replace(/[^a-z0-9]/g,'_'));
     return`<div class="person-card" id="pc-${key}" onclick="toggleCard('pc-${key}')">
       <div class="person-card-header">
         <div class="person-card-info">
           <div class="person-card-name">${esc(p.name)}</div>
           <div class="person-card-company">${esc(p.company)}</div>
         </div>
-        <span class="person-role-badge ${roleClass[p.role]||'role-guest'}">${roleLabel[p.role]||p.role}</span>
+        <span class="person-role-badge ${rc[p.role]||'role-guest'}">${rl[p.role]||p.role}</span>
       </div>
       <div class="person-stats">
-        <div class="pstat"><span class="pstat-num">${total}</span><span class="pstat-label">RDV</span></div>
-        <div class="pstat"><span class="pstat-num p">${present}</span><span class="pstat-label">Présent</span></div>
-        <div class="pstat"><span class="pstat-num a">${absent}</span><span class="pstat-label">Absent</span></div>
-        <div class="pstat"><span class="pstat-num" style="color:var(--grey)">${unknown}</span><span class="pstat-label">?</span></div>
+        <div class="pstat"><span class="pstat-num">${tot}</span><span class="pstat-label">RDV</span></div>
+        <div class="pstat"><span class="pstat-num p">${pres}</span><span class="pstat-label">Présent</span></div>
+        <div class="pstat"><span class="pstat-num a">${abs}</span><span class="pstat-label">Absent</span></div>
+        <div class="pstat"><span class="pstat-num" style="color:var(--grey)">${unk}</span><span class="pstat-label">?</span></div>
       </div>
       <div class="person-mini-bar"><div class="person-mini-bar-fill" style="width:${pct}%"></div></div>
-      <div class="person-meetings-list">${meetingRows}</div>
+      <div class="person-meetings-list">${meetRows}</div>
     </div>`;
   }).join('');
 }
+function toggleCard(id){const el=document.getElementById(id);if(el)el.classList.toggle('expanded');}
+function setPersonSort(btn){personSort=btn.dataset.psort;document.querySelectorAll('[data-psort]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPersons();}
+function setPersonRole(btn){personRole=btn.dataset.prole;document.querySelectorAll('[data-prole]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPersons();}
 
-function toggleCard(id){
-  const el=document.getElementById(id);
-  if(el) el.classList.toggle('expanded');
-}
-function setPersonSort(btn){
-  personSort=btn.dataset.psort;
-  document.querySelectorAll('[data-psort]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPersons();
-}
-function setPersonRole(btn){
-  personRole=btn.dataset.prole;
-  document.querySelectorAll('[data-prole]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPersons();
-}
-
-// ─── Shared ────────────────────────────────────────────────
+// ── SHARED ─────────────────────────────────────────────────
 function updateStats(){
   const t=meetings.length,p=meetings.filter(m=>m.presence==='present').length,a=meetings.filter(m=>m.presence==='absent').length;
   document.getElementById('stat-total').textContent=t;
@@ -614,74 +739,85 @@ function updateStats(){
   document.getElementById('bar-present').style.width=(t?p/t*100:0)+'%';
   document.getElementById('bar-absent').style.width=(t?a/t*100:0)+'%';
 }
-function togglePresence(id,val){
+async function togglePresence(id,val){
   const m=meetings.find(m=>m.id===id);
-  if(m){m.presence=m.presence===val?'unknown':val; render(); if(currentView==='persons') renderPersons();}
+  if(!m)return;
+  m.presence=m.presence===val?'unknown':val;
+  render();if(currentView==='persons')renderPersons();
+  if(!localMode&&supabase){
+    setSyncStatus('syncing','Sauvegarde…');
+    const{error}=await supabase.from('meetings').update({presence:m.presence}).eq('id',id);
+    setSyncStatus(error?'error':'ok',error?'Erreur':'Synchronisé');
+  }
 }
-function updateNote(id,val){const m=meetings.find(m=>m.id===id);if(m)m.note=val;}
+async function updateNote(id,val){
+  const m=meetings.find(m=>m.id===id);
+  if(!m)return;
+  m.note=val;
+  if(!localMode&&supabase){
+    setSyncStatus('syncing','Sauvegarde…');
+    const{error}=await supabase.from('meetings').update({note:val}).eq('id',id);
+    setSyncStatus(error?'error':'ok',error?'Erreur':'Synchronisé');
+  }
+}
 function setDayFilter(btn){filterDay=btn.dataset.day;document.querySelectorAll('[data-day]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
 function setPresenceFilter(btn){filterPresence=btn.dataset.presence;document.querySelectorAll('[data-presence]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
-function applyFilters(){
-  filterSearch=document.getElementById('search-input').value;
-  filterTime=document.getElementById('time-filter').value;
-  filterLoc=document.getElementById('location-filter').value;
-  render();
-}
+function applyFilters(){filterSearch=document.getElementById('search-input').value;filterTime=document.getElementById('time-filter').value;filterLoc=document.getElementById('location-filter').value;render();}
 function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ─── Export ────────────────────────────────────────────────
+// ── EXPORT ─────────────────────────────────────────────────
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
-
-  // Sheet 1: RDV
   const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
   meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,m.guest,m.guestCompany,pl[m.presence]||'?',m.note]));
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Planning RDV');
-
-  // Sheet 2: Stats par jour
   const sr=[['Jour','Total','Présents','Absents','Non renseigné','Taux']];
   ['Mer','Jeu','Ven'].forEach(d=>{
-    const dm=meetings.filter(m=>m.day===d);
-    const p=dm.filter(m=>m.presence==='present').length,a=dm.filter(m=>m.presence==='absent').length;
+    const dm=meetings.filter(m=>m.day===d),p=dm.filter(m=>m.presence==='present').length,a=dm.filter(m=>m.presence==='absent').length;
     sr.push([dl[d],dm.length,p,a,dm.length-p-a,dm.length?((p/dm.length)*100).toFixed(1)+'%':'-']);
   });
   const t=meetings.length,tp=meetings.filter(m=>m.presence==='present').length,ta=meetings.filter(m=>m.presence==='absent').length;
   sr.push(['TOTAL',t,tp,ta,t-tp-ta,t?((tp/t)*100).toFixed(1)+'%':'-']);
-  const ws2=XLSX.utils.aoa_to_sheet(sr);
-  ws2['!cols']=[15,10,10,10,14,12].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws2,'Résumé par jour');
-
-  // Sheet 3: Par personne
+  const ws2=XLSX.utils.aoa_to_sheet(sr);ws2['!cols']=[15,10,10,10,14,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Résumé');
   const map=buildPersonMap();
-  const pr=[['Nom','Entreprise','Rôle','Total RDV','Présents','Absents','Non renseigné','Taux présence']];
+  const pr=[['Nom','Entreprise','Rôle','Total RDV','Présents','Absents','Non renseigné','Taux']];
   Object.values(map).sort((a,b)=>b.meetings.length-a.meetings.length).forEach(p=>{
-    const tot=p.meetings.length;
-    const pres=p.meetings.filter(m=>m.presence==='present').length;
-    const abs=p.meetings.filter(m=>m.presence==='absent').length;
+    const tot=p.meetings.length,pres=p.meetings.filter(m=>m.presence==='present').length,abs=p.meetings.filter(m=>m.presence==='absent').length;
     pr.push([p.name,p.company,p.role==='both'?'Hôte & Invité':p.role==='host'?'Hôte':'Invité(e)',tot,pres,abs,tot-pres-abs,tot?((pres/tot)*100).toFixed(1)+'%':'-']);
   });
-  const ws3=XLSX.utils.aoa_to_sheet(pr);
-  ws3['!cols']=[25,28,16,10,10,10,14,14].map(w=>({wch:w}));
+  const ws3=XLSX.utils.aoa_to_sheet(pr);ws3['!cols']=[25,28,16,10,10,10,14,14].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws3,'Par personne');
-
   XLSX.writeFile(wb,`Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ─── Loading ───────────────────────────────────────────────
+// ── LOADING ────────────────────────────────────────────────
 function showLoading(msg,sub){document.getElementById('loading-text').textContent=msg||'';document.getElementById('loading-sub').textContent=sub||'';document.getElementById('loading').classList.add('show');}
 function updateLoading(msg,sub){document.getElementById('loading-text').textContent=msg;document.getElementById('loading-sub').textContent=sub||'';}
 function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
-// ─── Drag & drop ───────────────────────────────────────────
+// ── DRAG & DROP ────────────────────────────────────────────
 const dz=document.getElementById('drop-zone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f?.type==='application/pdf')processNewPDF(f,false);});
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f?.type==='application/pdf')processNewPDF(f,false);});
+}
+
+// ── AUTO-CONNECT on load ───────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  const url=localStorage.getItem('sb_url');
+  const key=localStorage.getItem('sb_key');
+  if(url&&key){
+    document.getElementById('sb-url').value=url;
+    document.getElementById('sb-key').value=key;
+    connectSupabase();
+  }
+});
 </script>
 </body>
 </html>
