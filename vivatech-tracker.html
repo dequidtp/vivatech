@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.3.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.4.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -501,11 +501,12 @@ async function parseXLSXFile(file){
   const ws=wb.Sheets[sheetName];
   const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
 
-  const DAY_MAP={
-    '2026-06-17':'Mer','17/06/2026':'Mer',
-    '2026-06-18':'Jeu','18/06/2026':'Jeu',
-    '2026-06-19':'Ven','19/06/2026':'Ven'
-  };
+  const DAY_MAP={'2026-06-17':'Mer','2026-06-18':'Jeu','2026-06-19':'Ven'};
+
+  // Helper: format Date as local YYYY-MM-DD
+  const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  // Helper: format Date as local HH:MM
+  const localTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 
   const result=[];
   for(const r of rows){
@@ -515,18 +516,16 @@ async function parseXLSXFile(file){
     let day='?';
     const rawDate=r['Date'];
     if(rawDate instanceof Date){
-      const iso=rawDate.toISOString().slice(0,10);
-      day=DAY_MAP[iso]||'?';
+      day=DAY_MAP[localDate(rawDate)]||'?';
     }else if(typeof rawDate==='string'&&rawDate){
-      const iso=(rawDate||'').slice(0,10);
-      day=DAY_MAP[iso]||DAY_MAP[rawDate]||'?';
+      day=DAY_MAP[rawDate.slice(0,10)]||'?';
     }
 
-    // Parse time
+    // Parse time — Time column contains a full datetime, use local hours
     let time='?';
     const rawTime=r['Time'];
     if(rawTime instanceof Date){
-      time=rawTime.toISOString().slice(11,16);
+      time=localTime(rawTime);
     }else if(typeof rawTime==='string'&&rawTime){
       const m=rawTime.match(/(\d{2}:\d{2})/);
       if(m)time=m[1];
