@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vivatech 2026 — Suivi RDV</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -180,8 +179,8 @@
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
-    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer" id="reimport-btn" style="display:none">⬆ Réimporter PDF</label>
-    <input type="file" id="reimport-input" accept=".pdf" style="display:none" onchange="handleReimport(this)">
+    <label for="reimport-input" class="btn btn-outline" style="cursor:pointer" id="reimport-btn" style="display:none">⬆ Réimporter Excel</label>
+    <input type="file" id="reimport-input" accept=".xlsx,.xls" style="display:none" onchange="handleReimport(this)">
     <button class="btn btn-success" onclick="exportExcel()" id="export-btn" style="display:none">⬇ Export Excel</button>
   </div>
 </header>
@@ -227,12 +226,12 @@
 <!-- UPLOAD SCREEN -->
 <div id="upload-zone">
   <div class="upload-card" id="drop-zone">
-    <div class="upload-icon">📋</div>
+    <div class="upload-icon">📊</div>
     <h2>Importer le planning Vivatech</h2>
-    <p>Glissez votre PDF de time schedules ou cliquez pour le sélectionner.</p>
-    <label class="upload-label" for="pdf-input">📄 Choisir un fichier PDF</label>
-    <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handleFile(this)">
-    <p class="upload-hint">Format : Time Schedules Business Meetings @ Vivatech</p>
+    <p>Glissez votre export Excel b2match ou cliquez pour le sélectionner.<br>Seuls les RDV <strong>acceptés</strong> seront importés.</p>
+    <label class="upload-label" for="xlsx-input">📊 Choisir le fichier Excel</label>
+    <input type="file" id="xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+    <p class="upload-hint">Export b2match — onglet "Meetings" requis</p>
   </div>
 </div>
 
@@ -340,8 +339,6 @@
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
 // ── STATE ──────────────────────────────────────────────────
 let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
@@ -460,114 +457,6 @@ function setSyncStatus(state, text){
   document.getElementById('sync-text').textContent=text;
 }
 
-// ── PDF PARSER ─────────────────────────────────────────────
-async function parsePDFFile(file){
-  showLoading('Ouverture du PDF…');
-  const ab=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
-  const DAY_MAP={Wed:'Mer',Thu:'Jeu',Fri:'Ven'};
-  const result=[];
-
-  for(let pn=1;pn<=pdf.numPages;pn++){
-    updateLoading(`Page ${pn} / ${pdf.numPages}`,`${result.length} RDV extraits`);
-    const page=await pdf.getPage(pn);
-    const tc=await page.getTextContent();
-    const items=tc.items.filter(i=>i.str&&i.str.trim())
-      .map(i=>({x:Math.round(i.transform[4]),y:Math.round(i.transform[5]),text:i.str.trim()}));
-    items.sort((a,b)=>b.y-a.y||a.x-b.x);
-    const rows=groupByY(items,3);
-
-    // ── Detect column boundaries from header row (Location | Host | Guest) ──
-    let colLoc=0, colHost=150, colGuest=290; // defaults
-    for(const row of rows){
-      const locH=row.items.find(it=>it.text==='Location');
-      const hostH=row.items.find(it=>it.text==='Host');
-      const guestH=row.items.find(it=>it.text==='Guest(s)');
-      if(locH&&hostH&&guestH){
-        colLoc=locH.x; colHost=hostH.x; colGuest=guestH.x;
-        break;
-      }
-    }
-    const midCol=(colHost+colGuest)/2;
-
-    let curDay=null,curTime=null,locBuffer=[],dataRows=[];
-    const emit=(r1,r2)=>{
-      const hostName=skipInitials(r1.mid),hostCo=r2?r2.mid:'';
-      const guestName=skipInitials(r1.right),guestCo=r2?r2.right:'';
-      const location=formatLocation(locBuffer.join(' '));
-      if(hostName&&guestName&&location&&curDay){
-        const id=`${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
-        if(!result.find(r=>r.id===id)){
-          result.push({id,day:curDay,time:curTime,location,
-            host:clean(hostName),hostCompany:clean(hostCo),
-            guest:clean(guestName),guestCompany:clean(guestCo),
-            presence:'unknown',note:''});
-        }
-      }
-    };
-
-    for(const row of rows){
-      // Header: Schedule for Wed/Thu/Fri with time
-      const hi=row.items.find(it=>/Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text));
-      if(hi){
-        if(dataRows.length===1)emit(dataRows[0],null);
-        const m=hi.text.match(/Schedule\s+for\s+(Wed|Thu|Fri),?\s+Jun\s+\d+\s+(\d{2}:\d{2})/i);
-        if(m){curDay=DAY_MAP[m[1]]||m[1];curTime=m[2];}
-        locBuffer=[];dataRows=[];continue;
-      }
-      // Lounge table header: "International Buyers Lounge … Table N" acts as location
-      const loungeItem=row.items.find(it=>/International\s+Buyers\s+Lounge/i.test(it.text)||
-        (/Business\s+France\s*[-–]\s*Hall/i.test(it.text))||
-        (/Business\s+Plaza\s*[-–]\s*Table\s+\d/i.test(it.text)));
-      if(loungeItem){
-        if(dataRows.length===1)emit(dataRows[0],null);
-        dataRows=[];
-        // Accumulate full location text from this row
-        const locText=row.items.map(it=>it.text).join(' ');
-        locBuffer=[locText];
-        continue;
-      }
-      if(row.items.every(it=>isMeta(it.text)))continue;
-      if(row.items.some(it=>it.text==='Location')&&row.items.some(it=>it.text==='Host'))continue;
-      if(!curDay)continue;
-
-      // Split row into location / host / guest columns using detected boundaries
-      const lt=row.items.filter(it=>it.x<colHost-10).map(it=>it.text).join(' ').trim();
-      const mt=row.items.filter(it=>it.x>=colHost-10&&it.x<colGuest-10).map(it=>it.text).join(' ').trim();
-      const rt=row.items.filter(it=>it.x>=colGuest-10).map(it=>it.text).join(' ').trim();
-
-      if(mt&&rt){
-        dataRows.push({mid:mt,right:rt});
-        if(lt&&!isMeta(lt))locBuffer.push(lt);
-        if(dataRows.length===2){emit(dataRows[0],dataRows[1]);locBuffer=[];dataRows=[];}
-      }else if(mt&&!rt){
-        if(lt&&!isMeta(lt))locBuffer.push(lt);
-      }else{
-        if(lt&&!isMeta(lt))locBuffer.push(lt);
-      }
-    }
-    if(dataRows.length===1)emit(dataRows[0],null);
-  }
-  hideLoading();
-  return result;
-}
-
-function groupByY(items,tol){
-  const g=[];
-  items.forEach(item=>{
-    const ex=g.find(r=>Math.abs(r.y-item.y)<=tol);
-    if(ex)ex.items.push(item);else g.push({y:item.y,items:[item]});
-  });
-  g.sort((a,b)=>b.y-a.y);g.forEach(r=>r.items.sort((a,b)=>a.x-b.x));
-  return g;
-}
-function isMeta(s){
-  if(!s)return true;
-  return/^\d{2}\.\d{2}\.\d{4}/.test(s)||/^\d+\s*\/\s*\d+$/.test(s)||
-    s.includes('Business Meetings @')||/\d+ June.*2026/.test(s)||
-    /17 June.*20 June/.test(s)||s==='Location'||s==='Host'||s==='Guest(s)';
-}
-function skipInitials(s){return s?s.replace(/^[A-Z]{1,3}\s+/,'').trim():'';}
 function formatLocation(raw){
   return(raw||'').replace(/\s+/g,' ')
     .replace(/Business\s+France\s*-?\s*3G13\s*-?\s*/i,'BF 3G13 — ')
@@ -578,13 +467,13 @@ function formatLocation(raw){
 function clean(s){return String(s||'').replace(/[⯑◇♦]/g,'').replace(/\s+/g,' ').trim();}
 
 // ── FILE HANDLING ──────────────────────────────────────────
-async function handleFile(input){if(!input.files[0])return;await processNewPDF(input.files[0],false);input.value='';}
-async function handleReimport(input){if(!input.files[0])return;await processNewPDF(input.files[0],true);input.value='';}
+async function handleFile(input){if(!input.files[0])return;await processNewFile(input.files[0],false);input.value='';}
+async function handleReimport(input){if(!input.files[0])return;await processNewFile(input.files[0],true);input.value='';}
 
-async function processNewPDF(file,isReimport){
+async function processNewFile(file,isReimport){
   try{
-    const parsed=await parsePDFFile(file);
-    if(!parsed.length){alert(`Aucun rendez-vous trouvé.`);return;}
+    const parsed=await parseXLSXFile(file);
+    if(!parsed.length){alert('Aucun RDV accepté trouvé dans le fichier.');return;}
     if(isReimport&&meetings.length>0){
       const eIds=new Set(meetings.map(m=>m.id)),nIds=new Set(parsed.map(m=>m.id));
       pendingImport={parsed,
@@ -596,6 +485,70 @@ async function processNewPDF(file,isReimport){
       await saveToBackend(parsed);
     }
   }catch(e){hideLoading();console.error(e);alert('Erreur : '+e.message);}
+}
+
+// ── XLSX PARSER ────────────────────────────────────────────
+async function parseXLSXFile(file){
+  showLoading('Lecture du fichier Excel…');
+  const ab=await file.arrayBuffer();
+  const wb=XLSX.read(ab,{type:'array',cellDates:true});
+
+  // Find the Meetings sheet
+  const sheetName=wb.SheetNames.find(n=>/meeting/i.test(n)&&!/member/i.test(n));
+  if(!sheetName){hideLoading();throw new Error('Onglet "Meetings" introuvable dans le fichier.');}
+
+  const ws=wb.Sheets[sheetName];
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+
+  const DAY_MAP={
+    '2026-06-17':'Mer','17/06/2026':'Mer',
+    '2026-06-18':'Jeu','18/06/2026':'Jeu',
+    '2026-06-19':'Ven','19/06/2026':'Ven'
+  };
+
+  const result=[];
+  for(const r of rows){
+    if((r['Status']||'').toLowerCase()!=='accepted')continue;
+
+    // Parse date
+    let day='?';
+    const rawDate=r['Date'];
+    if(rawDate instanceof Date){
+      const iso=rawDate.toISOString().slice(0,10);
+      day=DAY_MAP[iso]||'?';
+    }else if(typeof rawDate==='string'&&rawDate){
+      const iso=(rawDate||'').slice(0,10);
+      day=DAY_MAP[iso]||DAY_MAP[rawDate]||'?';
+    }
+
+    // Parse time
+    let time='?';
+    const rawTime=r['Time'];
+    if(rawTime instanceof Date){
+      time=rawTime.toISOString().slice(11,16);
+    }else if(typeof rawTime==='string'&&rawTime){
+      const m=rawTime.match(/(\d{2}:\d{2})/);
+      if(m)time=m[1];
+    }
+
+    const host=clean(r['Host Name']||'');
+    const hostCompany=clean(r['Host Organization']||'');
+    const guest=clean(r['Guest Name']||'');
+    const guestCompany=clean(r['Guest Organization']||'');
+    const location=formatLocation(String(r['Location']||''));
+
+    if(!host||!guest)continue;
+
+    const id=`${day}|${time}|${location}|${host}|${guest}`;
+    if(!result.find(x=>x.id===id)){
+      result.push({id,day,time,location,
+        host,hostCompany,guest,guestCompany,
+        presence:'unknown',note:''});
+    }
+  }
+  updateLoading(`${result.length} RDV acceptés trouvés`,'');
+  hideLoading();
+  return result;
 }
 
 async function saveToBackend(data){
@@ -913,7 +866,7 @@ const dz=document.getElementById('drop-zone');
 if(dz){
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
   dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
-  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f?.type==='application/pdf')processNewPDF(f,false);});
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)processNewFile(f,false);});
 }
 
 // ── AUTO-CONNECT on load ───────────────────────────────────
