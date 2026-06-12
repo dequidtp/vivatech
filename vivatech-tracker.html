@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.7.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.8.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -334,17 +334,12 @@
       </div>
       <div class="toolbar-sep"></div>
       <div class="filter-tabs">
-        <button class="filter-tab active" data-prole="all" onclick="setPersonRole(this)">Tous</button>
-        <button class="filter-tab" data-prole="host" onclick="setPersonRole(this)">Hôtes</button>
-        <button class="filter-tab" data-prole="guest" onclick="setPersonRole(this)">Invités</button>
-      </div>
-      <div class="toolbar-sep"></div>
-      <div class="filter-tabs">
         <button class="filter-tab active" data-ppres="all" onclick="setPersonPres(this)">Tous</button>
         <button class="filter-tab" data-ppres="present" onclick="setPersonPres(this)">✓ Présents</button>
         <button class="filter-tab" data-ppres="absent" onclick="setPersonPres(this)">✗ Absents</button>
         <button class="filter-tab" data-ppres="unknown" onclick="setPersonPres(this)">? Non renseigné</button>
       </div>
+      <button class="btn btn-success" onclick="exportPersonsExcel()" style="font-size:11px;padding:5px 10px">⬇ Export acheteurs</button>
       <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="person-count"></span>
     </div>
     <div class="persons-container">
@@ -428,6 +423,7 @@ async function loadFromSupabase(){
         id:r.id, day:r.day, time:r.time, location:r.location,
         host:r.host, hostCompany:r.hostCompany||'',
         guest:r.guest, guestCompany:r.guestCompany||'',
+        hostType:r.hostType||'', guestType:r.guestType||'',
         hostPresence:r.hostPresence||r.presence||'unknown',
         guestPresence:r.guestPresence||r.presence||'unknown',
         note:r.note||''
@@ -553,6 +549,8 @@ async function parseXLSXFile(file){
     const hostCompany=clean(r['Host Organization']||'');
     const guest=clean(r['Guest Name']||'');
     const guestCompany=clean(r['Guest Organization']||'');
+    const hostType=clean(r['Host Participation Type']||'');
+    const guestType=clean(r['Guest Participation Type']||'');
     const location=formatLocation(String(r['Location']||''));
 
     if(!host||!guest)continue;
@@ -560,8 +558,9 @@ async function parseXLSXFile(file){
     const id=`${day}|${time}|${location}|${host}|${guest}`;
     if(!result.find(x=>x.id===id)){
       result.push({id,day,time,location,
-        host,hostCompany,guest,guestCompany,
-        presence:'unknown',note:''});
+        host,hostCompany,hostType,
+        guest,guestCompany,guestType,
+        hostPresence:'unknown',guestPresence:'unknown',note:''});
     }
   }
   updateLoading(`${result.length} RDV acceptés trouvés`,'');
@@ -582,8 +581,7 @@ async function saveToBackend(data){
         guest:m.guest,guestCompany:m.guestCompany,
         hostPresence:ex?ex.hostPresence:'unknown',
         guestPresence:ex?ex.guestPresence:'unknown',
-        note:ex?ex.note:''};
-    });
+        note:ex?ex.note:''};    });
 
     // Delete removed meetings — in batches of 100 to avoid URL length limits
     const newIds=new Set(data.map(m=>m.id));
@@ -608,10 +606,15 @@ async function saveToBackend(data){
     updateLoading('Vérification…','Rechargement depuis la base');
     const{data:fresh,error:loadErr}=await sbClient.from('meetings').select('*');
     if(loadErr)throw new Error('Rechargement échoué : '+loadErr.message);
+    // Build type map from imported data (types not stored in DB)
+    const typeMap={};
+    data.forEach(m=>{typeMap[m.id]={hostType:m.hostType||'',guestType:m.guestType||''};});
     meetings=fresh.map(r=>({
       id:r.id,day:r.day,time:r.time,location:r.location,
       host:r.host,hostCompany:r.hostCompany||'',
       guest:r.guest,guestCompany:r.guestCompany||'',
+      hostType:typeMap[r.id]?.hostType||'',
+      guestType:typeMap[r.id]?.guestType||'',
       hostPresence:r.hostPresence||'unknown',
       guestPresence:r.guestPresence||'unknown',
       note:r.note||''
@@ -725,14 +728,17 @@ function renderTable(data){
 // ── PERSONS RENDER ─────────────────────────────────────────
 function buildPersonMap(){
   const map={};
-  const add=(name,company,role,meeting)=>{
+  const add=(name,company,type,role,meeting)=>{
     if(!name)return;
     const key=name.toLowerCase().trim();
-    if(!map[key])map[key]={name,company,role,meetings:[]};
+    if(!map[key])map[key]={name,company,type,role,meetings:[]};
     else if(map[key].role!==role)map[key].role='both';
     map[key].meetings.push({...meeting,asRole:role});
   };
-  meetings.forEach(m=>{add(m.host,m.hostCompany,'host',m);add(m.guest,m.guestCompany,'guest',m);});
+  meetings.forEach(m=>{
+    add(m.host,m.hostCompany,m.hostType,'host',m);
+    add(m.guest,m.guestCompany,m.guestType,'guest',m);
+  });
   return map;
 }
 
@@ -740,12 +746,11 @@ function renderPersons(){
   const map=buildPersonMap();
   const query=(document.getElementById('person-search').value||'').toLowerCase();
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
-  let persons=Object.values(map);
-  if(query)persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
-  if(personRole==='host')persons=persons.filter(p=>p.role==='host'||p.role==='both');
-  if(personRole==='guest')persons=persons.filter(p=>p.role==='guest'||p.role==='both');
+  const TOP_BUYER="International Buyers (Top Buyers' Program)";
 
-  // Presence of a person in a meeting = hostPresence if they're host, guestPresence if guest
+  let persons=Object.values(map).filter(p=>p.type===TOP_BUYER);
+  if(query)persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
+
   const personMeetPres=(m)=>m.asRole==='host'?m.hostPresence:m.guestPresence;
 
   if(personPresFilter==='present')persons=persons.filter(p=>p.meetings.some(m=>personMeetPres(m)==='present'));
@@ -757,8 +762,7 @@ function renderPersons(){
   else if(personSort==='present')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='present').length-a.meetings.filter(m=>personMeetPres(m)==='present').length);
   else if(personSort==='absent')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='absent').length-a.meetings.filter(m=>personMeetPres(m)==='absent').length);
 
-  document.getElementById('person-count').textContent=`${persons.length} personne${persons.length>1?'s':''}`;
-  const rl={host:'Hôte',guest:'Invité(e)',both:'Hôte & Invité'},rc={host:'role-host',guest:'role-guest',both:'role-both'};
+  document.getElementById('person-count').textContent=`${persons.length} acheteur${persons.length>1?'s':''}`;
 
   document.getElementById('persons-grid').innerHTML=persons.map(p=>{
     const tot=p.meetings.length;
@@ -771,14 +775,14 @@ function renderPersons(){
 
     const meetRows=sorted.map(m=>{
       const mid=esc(m.id);
-      const myRole=m.asRole; // 'host' or 'guest'
+      const myRole=m.asRole;
       const myPres=personMeetPres(m);
       const dotCls=myPres==='present'?'present':myPres==='absent'?'absent':'unknown';
+      const counterpart=myRole==='host'?`${esc(m.guest)} — ${esc(m.guestCompany)}`:`${esc(m.host)} — ${esc(m.hostCompany)}`;
       return`<div class="pmeet">
         <div class="pmeet-dot ${dotCls}"></div>
-        <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
-        <span class="pmeet-loc">${esc(m.location)}</span>
-        <span style="font-size:10px;color:var(--text-soft);flex-shrink:0">${myRole==='host'?'🎤':'👤'}</span>
+        <span class="pmeet-time" style="flex-shrink:0">${dl[m.day]||m.day} ${m.time}</span>
+        <span style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${counterpart}">${counterpart}</span>
         <div class="presence-toggle" style="margin-left:4px;flex-shrink:0">
           <button class="toggle-btn ${myPres==='present'?'active-present':''}" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();togglePresence('${mid}','${myRole}','present')" title="Présent">✓</button>
           <button class="toggle-btn ${myPres==='absent'?'active-absent':''}" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();togglePresence('${mid}','${myRole}','absent')" title="Absent">✗</button>
@@ -792,7 +796,7 @@ function renderPersons(){
           <div class="person-card-name">${esc(p.name)}</div>
           <div class="person-card-company">${esc(p.company)}</div>
         </div>
-        <span class="person-role-badge ${rc[p.role]||'role-guest'}">${rl[p.role]||p.role}</span>
+        <span class="person-role-badge" style="background:#e8f5e9;color:#2e7d32;font-size:9px">🌍 Top Buyer</span>
       </div>
       <div class="person-stats">
         <div class="pstat"><span class="pstat-num">${tot}</span><span class="pstat-label">RDV</span></div>
@@ -803,7 +807,62 @@ function renderPersons(){
       <div class="person-mini-bar"><div class="person-mini-bar-fill" style="width:${pct}%"></div></div>
       <div class="person-meetings-list">${meetRows}</div>
     </div>`;
-  }).join('');
+  }).join('')||'<div class="empty-state"><div style="font-size:32px">🌍</div><p>Aucun acheteur international trouvé.<br><small>Réimportez l\'Excel b2match pour charger les types de participation.</small></p></div>';
+}
+
+function exportPersonsExcel(){
+  const map=buildPersonMap();
+  const TOP_BUYER="International Buyers (Top Buyers' Program)";
+  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+  const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: summary per buyer
+  const summary=[['Acheteur','Organisation','Total RDV','Présents','Absents','Non renseigné']];
+  const buyers=Object.values(map).filter(p=>p.type===TOP_BUYER)
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  const personMeetPres=(m)=>m.asRole==='host'?m.hostPresence:m.guestPresence;
+  buyers.forEach(p=>{
+    const tot=p.meetings.length;
+    const pres=p.meetings.filter(m=>personMeetPres(m)==='present').length;
+    const abs=p.meetings.filter(m=>personMeetPres(m)==='absent').length;
+    summary.push([p.name,p.company,tot,pres,abs,tot-pres-abs]);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(summary);
+  ws1['!cols']=[28,28,10,10,10,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws1,'Résumé acheteurs');
+
+  // Sheet 2: all RDVs per buyer with presence
+  const detail=[['Acheteur','Organisation','Jour','Heure','Lieu','Interlocuteur','Entreprise interlocuteur','Présence acheteur']];
+  buyers.forEach(p=>{
+    const sorted=[...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
+    sorted.forEach(m=>{
+      const myPres=personMeetPres(m);
+      const counterName=m.asRole==='host'?m.guest:m.host;
+      const counterCo=m.asRole==='host'?m.guestCompany:m.hostCompany;
+      detail.push([p.name,p.company,dl[m.day]||m.day,m.time,m.location,counterName,counterCo,pl[myPres]||'?']);
+    });
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(detail);
+  ws2['!cols']=[28,28,12,8,35,28,28,16].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Détail RDV');
+
+  // Sheet 3: absents only
+  const absents=[['Acheteur','Organisation','Jour','Heure','Lieu','Interlocuteur','Entreprise interlocuteur']];
+  buyers.forEach(p=>{
+    const sorted=[...p.meetings].filter(m=>personMeetPres(m)==='absent')
+      .sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
+    sorted.forEach(m=>{
+      const counterName=m.asRole==='host'?m.guest:m.host;
+      const counterCo=m.asRole==='host'?m.guestCompany:m.hostCompany;
+      absents.push([p.name,p.company,dl[m.day]||m.day,m.time,m.location,counterName,counterCo]);
+    });
+  });
+  const ws3=XLSX.utils.aoa_to_sheet(absents);
+  ws3['!cols']=[28,28,12,8,35,28,28].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws3,'Absences');
+
+  XLSX.writeFile(wb,`Vivatech_2026_TopBuyers_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 function toggleCard(id){const el=document.getElementById(id);if(el)el.classList.toggle('expanded');}
