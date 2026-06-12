@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.4.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.6.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -200,7 +200,12 @@
     <div class="setup-step">
       <strong>② Créer la table SQL</strong>
       Dans l'éditeur SQL de Supabase, exécutez :<br><br>
-      <code>create table meetings (id text primary key, day text, time text, location text, host text, "hostCompany" text, guest text, "guestCompany" text, presence text default 'unknown', note text default '');</code>
+      <code>create table meetings (id text primary key, day text, time text, location text, host text, "hostCompany" text, guest text, "guestCompany" text, "hostPresence" text default 'unknown', "guestPresence" text default 'unknown', note text default '');
+-- Migration si table déjà existante :
+-- alter table meetings add column "hostPresence" text default 'unknown';
+-- alter table meetings add column "guestPresence" text default 'unknown';
+-- update meetings set "hostPresence"=presence, "guestPresence"=presence;
+-- alter table meetings drop column presence;</code>
     </div>
     <div class="setup-step">
       <strong>③ Récupérer vos clés</strong>
@@ -240,8 +245,8 @@
 <div id="app">
   <div class="stats-bar">
     <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total RDV</span></div>
-    <div class="stat-item present"><span class="stat-num" id="stat-present">0</span><span class="stat-label">Présents</span></div>
-    <div class="stat-item absent"><span class="stat-num" id="stat-absent">0</span><span class="stat-label">Absents</span></div>
+    <div class="stat-item present"><span class="stat-num" id="stat-present">0</span><span class="stat-label">Au moins 1 présent</span></div>
+    <div class="stat-item absent"><span class="stat-num" id="stat-absent">0</span><span class="stat-label">Au moins 1 absent</span></div>
     <div class="stat-item unknown"><span class="stat-num" id="stat-unknown">0</span><span class="stat-label">Non renseigné</span></div>
     <div class="presence-bar">
       <span class="presence-bar-label">Taux de présence</span>
@@ -270,7 +275,7 @@
       <div class="filter-tabs">
         <button class="filter-tab active" data-presence="all" onclick="setPresenceFilter(this)">Tous</button>
         <button class="filter-tab" data-presence="present" onclick="setPresenceFilter(this)">✓ Présents</button>
-        <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Absents</button>
+        <button class="filter-tab" data-presence="absent" onclick="setPresenceFilter(this)">✗ Au moins 1 absent</button>
         <button class="filter-tab" data-presence="unknown" onclick="setPresenceFilter(this)">? Non renseigné</button>
       </div>
       <div class="toolbar-sep"></div>
@@ -303,7 +308,8 @@
           <th onclick="sortBy('hostCompany')">Entreprise hôte ↕</th>
           <th onclick="sortBy('guest')">Invité(e) ↕</th>
           <th onclick="sortBy('guestCompany')">Entreprise invitée ↕</th>
-          <th style="text-align:center;min-width:90px">Présence</th>
+          <th style="text-align:center;min-width:70px">Hôte 🎤</th>
+          <th style="text-align:center;min-width:70px">Invité(e) 👤</th>
           <th style="min-width:140px">Notes</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
@@ -324,12 +330,20 @@
         <button class="filter-tab active" data-psort="total" onclick="setPersonSort(this)">Nb RDV</button>
         <button class="filter-tab" data-psort="name" onclick="setPersonSort(this)">Nom</button>
         <button class="filter-tab" data-psort="present" onclick="setPersonSort(this)">Présents</button>
+        <button class="filter-tab" data-psort="absent" onclick="setPersonSort(this)">Absents</button>
       </div>
       <div class="toolbar-sep"></div>
       <div class="filter-tabs">
         <button class="filter-tab active" data-prole="all" onclick="setPersonRole(this)">Tous</button>
         <button class="filter-tab" data-prole="host" onclick="setPersonRole(this)">Hôtes</button>
         <button class="filter-tab" data-prole="guest" onclick="setPersonRole(this)">Invités</button>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-ppres="all" onclick="setPersonPres(this)">Tous</button>
+        <button class="filter-tab" data-ppres="present" onclick="setPersonPres(this)">✓ Présents</button>
+        <button class="filter-tab" data-ppres="absent" onclick="setPersonPres(this)">✗ Absents</button>
+        <button class="filter-tab" data-ppres="unknown" onclick="setPersonPres(this)">? Non renseigné</button>
       </div>
       <span style="font-size:11px;color:var(--text-soft);margin-left:auto" id="person-count"></span>
     </div>
@@ -344,7 +358,7 @@
 let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterLocs=new Set(), filterSearch='';
-let currentView='table', personSort='total', personRole='all';
+let currentView='table', personSort='total', personRole='all', personPresFilter='all';
 let allLocs=[];
 const SB_URL='https://efmbsdytlzqybxyenmwq.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbWJzZHl0bHpxeWJ4eWVubXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODUxNDksImV4cCI6MjA5Njc2MTE0OX0.lk-kK2gldd4VRmYxrDO9TBcshjp4Zo5gXqHlka-2UXM';
@@ -414,7 +428,9 @@ async function loadFromSupabase(){
         id:r.id, day:r.day, time:r.time, location:r.location,
         host:r.host, hostCompany:r.hostCompany||'',
         guest:r.guest, guestCompany:r.guestCompany||'',
-        presence:r.presence||'unknown', note:r.note||''
+        hostPresence:r.hostPresence||r.presence||'unknown',
+        guestPresence:r.guestPresence||r.presence||'unknown',
+        note:r.note||''
       }));
       hideLoading();
       document.getElementById('setup-zone').style.display='none';
@@ -439,7 +455,8 @@ function subscribeRealtime(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'meetings'},payload=>{
       const m=meetings.find(m=>m.id===payload.new.id);
       if(m){
-        m.presence=payload.new.presence;
+        m.hostPresence=payload.new.hostPresence||'unknown';
+        m.guestPresence=payload.new.guestPresence||'unknown';
         m.note=payload.new.note;
         render();
         if(currentView==='persons') renderPersons();
@@ -562,7 +579,9 @@ async function saveToBackend(data){
       return{id:m.id,day:m.day,time:m.time,location:m.location,
         host:m.host,hostCompany:m.hostCompany,
         guest:m.guest,guestCompany:m.guestCompany,
-        presence:ex?ex.presence:'unknown',note:ex?ex.note:''};
+        hostPresence:ex?ex.hostPresence:'unknown',
+        guestPresence:ex?ex.guestPresence:'unknown',
+        note:ex?ex.note:''};
     });
 
     // Delete removed meetings — in batches of 100 to avoid URL length limits
@@ -592,7 +611,9 @@ async function saveToBackend(data){
       id:r.id,day:r.day,time:r.time,location:r.location,
       host:r.host,hostCompany:r.hostCompany||'',
       guest:r.guest,guestCompany:r.guestCompany||'',
-      presence:r.presence||'unknown',note:r.note||''
+      hostPresence:r.hostPresence||'unknown',
+      guestPresence:r.guestPresence||'unknown',
+      note:r.note||''
     }));
     console.log(`[import] done — ${meetings.length} meetings in DB`);
     hideLoading();
@@ -612,7 +633,7 @@ function showDiffModal(){
     <div class="diff-line"><span>RDV maintenus</span><strong>${kept.length}</strong></div>
     <div class="diff-line" style="color:#2e7d32"><span>➕ Nouveaux RDV</span><strong>${added.length}</strong></div>
     <div class="diff-line" style="color:#c62828"><span>➖ RDV supprimés</span><strong>${removed.length}</strong></div>
-    <div class="diff-line"><span>✅ Coches conservées</span><strong>${meetings.filter(m=>m.presence!=='unknown').length}</strong></div>`;
+    <div class="diff-line"><span>✅ Coches conservées</span><strong>${meetings.filter(m=>m.hostPresence!=='unknown'||m.guestPresence!=='unknown').length}</strong></div>`;
   document.getElementById('diff-modal').classList.add('open');
 }
 function closeDiffModal(){document.getElementById('diff-modal').classList.remove('open');pendingImport=null;}
@@ -658,7 +679,9 @@ function render(){
 function getFiltered(){
   let d=[...meetings];
   if(filterDay!=='all')d=d.filter(m=>m.day===filterDay);
-  if(filterPresence!=='all')d=d.filter(m=>m.presence===filterPresence);
+  if(filterPresence==='present')d=d.filter(m=>m.hostPresence==='present'||m.guestPresence==='present');
+  if(filterPresence==='absent')d=d.filter(m=>m.hostPresence==='absent'||m.guestPresence==='absent');
+  if(filterPresence==='unknown')d=d.filter(m=>m.hostPresence==='unknown'&&m.guestPresence==='unknown');
   if(filterTime)d=d.filter(m=>m.time===filterTime);
   if(filterLocs.size>0)d=d.filter(m=>filterLocs.has(m.location));
   if(filterSearch){const q=filterSearch.toLowerCase();d=d.filter(m=>[m.host,m.hostCompany,m.guest,m.guestCompany].some(s=>s.toLowerCase().includes(q)));}
@@ -673,7 +696,9 @@ function renderTable(data){
   const dc={Mer:'day-wed',Jeu:'day-thu',Ven:'day-fri'};
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
   tbody.innerHTML=data.map(m=>{
-    const pc=m.presence==='present'?'present-row':m.presence==='absent'?'absent-row':'';
+    const anyAbsent=m.hostPresence==='absent'||m.guestPresence==='absent';
+    const anyPresent=m.hostPresence==='present'||m.guestPresence==='present';
+    const pc=anyAbsent?'absent-row':anyPresent?'present-row':'';
     const id=esc(m.id);
     return`<tr class="${pc}">
       <td><span class="day-badge ${dc[m.day]||''}">${dl[m.day]||m.day}</span></td>
@@ -684,8 +709,12 @@ function renderTable(data){
       <td><div class="person-name">${esc(m.guest)}</div></td>
       <td><div class="person-company">${esc(m.guestCompany)}</div></td>
       <td><div class="presence-toggle">
-        <button class="toggle-btn ${m.presence==='present'?'active-present':''}" onclick="togglePresence('${id}','present')">✓</button>
-        <button class="toggle-btn ${m.presence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','absent')">✗</button>
+        <button class="toggle-btn ${m.hostPresence==='present'?'active-present':''}" onclick="togglePresence('${id}','host','present')" title="Hôte présent">✓</button>
+        <button class="toggle-btn ${m.hostPresence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','host','absent')" title="Hôte absent">✗</button>
+      </div></td>
+      <td><div class="presence-toggle">
+        <button class="toggle-btn ${m.guestPresence==='present'?'active-present':''}" onclick="togglePresence('${id}','guest','present')" title="Invité présent">✓</button>
+        <button class="toggle-btn ${m.guestPresence==='absent'?'active-absent':''}" onclick="togglePresence('${id}','guest','absent')" title="Invité absent">✗</button>
       </div></td>
       <td><input class="note-input" value="${esc(m.note)}" placeholder="Note…" onchange="updateNote('${id}',this.value)"></td>
     </tr>`;
@@ -705,6 +734,7 @@ function buildPersonMap(){
   meetings.forEach(m=>{add(m.host,m.hostCompany,'host',m);add(m.guest,m.guestCompany,'guest',m);});
   return map;
 }
+
 function renderPersons(){
   const map=buildPersonMap();
   const query=(document.getElementById('person-search').value||'').toLowerCase();
@@ -713,24 +743,49 @@ function renderPersons(){
   if(query)persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
   if(personRole==='host')persons=persons.filter(p=>p.role==='host'||p.role==='both');
   if(personRole==='guest')persons=persons.filter(p=>p.role==='guest'||p.role==='both');
+
+  // Presence of a person in a meeting = hostPresence if they're host, guestPresence if guest
+  const personMeetPres=(m)=>m.asRole==='host'?m.hostPresence:m.guestPresence;
+
+  if(personPresFilter==='present')persons=persons.filter(p=>p.meetings.some(m=>personMeetPres(m)==='present'));
+  if(personPresFilter==='absent')persons=persons.filter(p=>p.meetings.some(m=>personMeetPres(m)==='absent'));
+  if(personPresFilter==='unknown')persons=persons.filter(p=>p.meetings.every(m=>personMeetPres(m)==='unknown'));
+
   if(personSort==='name')persons.sort((a,b)=>a.name.localeCompare(b.name));
   else if(personSort==='total')persons.sort((a,b)=>b.meetings.length-a.meetings.length);
-  else if(personSort==='present')persons.sort((a,b)=>b.meetings.filter(m=>m.presence==='present').length-a.meetings.filter(m=>m.presence==='present').length);
+  else if(personSort==='present')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='present').length-a.meetings.filter(m=>personMeetPres(m)==='present').length);
+  else if(personSort==='absent')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='absent').length-a.meetings.filter(m=>personMeetPres(m)==='absent').length);
+
   document.getElementById('person-count').textContent=`${persons.length} personne${persons.length>1?'s':''}`;
   const rl={host:'Hôte',guest:'Invité(e)',both:'Hôte & Invité'},rc={host:'role-host',guest:'role-guest',both:'role-both'};
+
   document.getElementById('persons-grid').innerHTML=persons.map(p=>{
-    const tot=p.meetings.length,pres=p.meetings.filter(m=>m.presence==='present').length;
-    const abs=p.meetings.filter(m=>m.presence==='absent').length,unk=tot-pres-abs;
+    const tot=p.meetings.length;
+    const pres=p.meetings.filter(m=>personMeetPres(m)==='present').length;
+    const abs=p.meetings.filter(m=>personMeetPres(m)==='absent').length;
+    const unk=tot-pres-abs;
     const pct=tot?Math.round(pres/tot*100):0;
     const sorted=[...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
-    const meetRows=sorted.map(m=>`<div class="pmeet">
-      <div class="pmeet-dot ${m.presence}"></div>
-      <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
-      <span class="pmeet-loc">${esc(m.location)}</span>
-      <span style="font-size:10px;color:var(--text-soft)">${m.asRole==='host'?'🎤':'👤'}</span>
-    </div>`).join('');
-    const key=esc(p.name.toLowerCase().trim().replace(/[^a-z0-9]/g,'_'));
-    return`<div class="person-card" id="pc-${key}" onclick="toggleCard('pc-${key}')">
+    const nameKey=esc(p.name.toLowerCase().trim().replace(/[^a-z0-9]/g,'_'));
+
+    const meetRows=sorted.map(m=>{
+      const mid=esc(m.id);
+      const myRole=m.asRole; // 'host' or 'guest'
+      const myPres=personMeetPres(m);
+      const dotCls=myPres==='present'?'present':myPres==='absent'?'absent':'unknown';
+      return`<div class="pmeet">
+        <div class="pmeet-dot ${dotCls}"></div>
+        <span class="pmeet-time">${dl[m.day]||m.day} ${m.time}</span>
+        <span class="pmeet-loc">${esc(m.location)}</span>
+        <span style="font-size:10px;color:var(--text-soft);flex-shrink:0">${myRole==='host'?'🎤':'👤'}</span>
+        <div class="presence-toggle" style="margin-left:4px;flex-shrink:0">
+          <button class="toggle-btn ${myPres==='present'?'active-present':''}" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();togglePresence('${mid}','${myRole}','present')" title="Présent">✓</button>
+          <button class="toggle-btn ${myPres==='absent'?'active-absent':''}" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();togglePresence('${mid}','${myRole}','absent')" title="Absent">✗</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return`<div class="person-card" id="pc-${nameKey}" onclick="toggleCard('pc-${nameKey}')">
       <div class="person-card-header">
         <div class="person-card-info">
           <div class="person-card-name">${esc(p.name)}</div>
@@ -749,28 +804,33 @@ function renderPersons(){
     </div>`;
   }).join('');
 }
+
 function toggleCard(id){const el=document.getElementById(id);if(el)el.classList.toggle('expanded');}
 function setPersonSort(btn){personSort=btn.dataset.psort;document.querySelectorAll('[data-psort]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPersons();}
 function setPersonRole(btn){personRole=btn.dataset.prole;document.querySelectorAll('[data-prole]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPersons();}
+function setPersonPres(btn){personPresFilter=btn.dataset.ppres;document.querySelectorAll('[data-ppres]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPersons();}
 
 // ── SHARED ─────────────────────────────────────────────────
 function updateStats(){
-  const t=meetings.length,p=meetings.filter(m=>m.presence==='present').length,a=meetings.filter(m=>m.presence==='absent').length;
+  const t=meetings.length;
+  const p=meetings.filter(m=>m.hostPresence==='present'||m.guestPresence==='present').length;
+  const a=meetings.filter(m=>m.hostPresence==='absent'||m.guestPresence==='absent').length;
   document.getElementById('stat-total').textContent=t;
   document.getElementById('stat-present').textContent=p;
   document.getElementById('stat-absent').textContent=a;
-  document.getElementById('stat-unknown').textContent=t-p-a;
+  document.getElementById('stat-unknown').textContent=meetings.filter(m=>m.hostPresence==='unknown'&&m.guestPresence==='unknown').length;
   document.getElementById('bar-present').style.width=(t?p/t*100:0)+'%';
   document.getElementById('bar-absent').style.width=(t?a/t*100:0)+'%';
 }
-async function togglePresence(id,val){
+async function togglePresence(id,role,val){
   const m=meetings.find(m=>m.id===id);
   if(!m)return;
-  m.presence=m.presence===val?'unknown':val;
+  const field=role==='host'?'hostPresence':'guestPresence';
+  m[field]=m[field]===val?'unknown':val;
   render();if(currentView==='persons')renderPersons();
   if(!localMode&&sbClient){
     setSyncStatus('syncing','Sauvegarde…');
-    const{error}=await sbClient.from('meetings').update({presence:m.presence}).eq('id',id);
+    const{error}=await sbClient.from('meetings').update({[field]:m[field]}).eq('id',id);
     setSyncStatus(error?'error':'ok',error?'Erreur':'Synchronisé');
   }
 }
@@ -845,26 +905,31 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
   const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
-  const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Invité(e)','Entreprise invitée','Présence','Notes']];
-  meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,m.guest,m.guestCompany,pl[m.presence]||'?',m.note]));
-  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[12,8,35,22,28,22,28,14,25].map(w=>({wch:w}));
+  const rows=[['Jour','Heure','Lieu','Hôte','Entreprise hôte','Présence hôte','Invité(e)','Entreprise invitée','Présence invité(e)','Notes']];
+  meetings.forEach(m=>rows.push([dl[m.day]||m.day,m.time,m.location,m.host,m.hostCompany,pl[m.hostPresence]||'?',m.guest,m.guestCompany,pl[m.guestPresence]||'?',m.note]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[12,8,35,22,28,14,22,28,14,25].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Planning RDV');
-  const sr=[['Jour','Total','Présents','Absents','Non renseigné','Taux']];
+  const sr=[['Jour','Total RDV','Hôtes présents','Hôtes absents','Invités présents','Invités absents']];
   ['Mer','Jeu','Ven'].forEach(d=>{
-    const dm=meetings.filter(m=>m.day===d),p=dm.filter(m=>m.presence==='present').length,a=dm.filter(m=>m.presence==='absent').length;
-    sr.push([dl[d],dm.length,p,a,dm.length-p-a,dm.length?((p/dm.length)*100).toFixed(1)+'%':'-']);
+    const dm=meetings.filter(m=>m.day===d);
+    sr.push([dl[d],dm.length,
+      dm.filter(m=>m.hostPresence==='present').length,
+      dm.filter(m=>m.hostPresence==='absent').length,
+      dm.filter(m=>m.guestPresence==='present').length,
+      dm.filter(m=>m.guestPresence==='absent').length]);
   });
-  const t=meetings.length,tp=meetings.filter(m=>m.presence==='present').length,ta=meetings.filter(m=>m.presence==='absent').length;
-  sr.push(['TOTAL',t,tp,ta,t-tp-ta,t?((tp/t)*100).toFixed(1)+'%':'-']);
-  const ws2=XLSX.utils.aoa_to_sheet(sr);ws2['!cols']=[15,10,10,10,14,12].map(w=>({wch:w}));
+  const ws2=XLSX.utils.aoa_to_sheet(sr);ws2['!cols']=[15,10,14,12,14,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws2,'Résumé');
+  // Per person — presence based on their role in each meeting
   const map=buildPersonMap();
-  const pr=[['Nom','Entreprise','Rôle','Total RDV','Présents','Absents','Non renseigné','Taux']];
+  const pr=[['Nom','Entreprise','Rôle','Total RDV','Présent(e)','Absent(e)','Non renseigné']];
   Object.values(map).sort((a,b)=>b.meetings.length-a.meetings.length).forEach(p=>{
-    const tot=p.meetings.length,pres=p.meetings.filter(m=>m.presence==='present').length,abs=p.meetings.filter(m=>m.presence==='absent').length;
-    pr.push([p.name,p.company,p.role==='both'?'Hôte & Invité':p.role==='host'?'Hôte':'Invité(e)',tot,pres,abs,tot-pres-abs,tot?((pres/tot)*100).toFixed(1)+'%':'-']);
+    const tot=p.meetings.length;
+    const pres=p.meetings.filter(m=>(m.asRole==='host'?m.hostPresence:m.guestPresence)==='present').length;
+    const abs=p.meetings.filter(m=>(m.asRole==='host'?m.hostPresence:m.guestPresence)==='absent').length;
+    pr.push([p.name,p.company,p.role==='both'?'Hôte & Invité':p.role==='host'?'Hôte':'Invité(e)',tot,pres,abs,tot-pres-abs]);
   });
-  const ws3=XLSX.utils.aoa_to_sheet(pr);ws3['!cols']=[25,28,16,10,10,10,14,14].map(w=>({wch:w}));
+  const ws3=XLSX.utils.aoa_to_sheet(pr);ws3['!cols']=[25,28,16,10,10,10,14].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws3,'Par personne');
   XLSX.writeFile(wb,`Vivatech_2026_RDV_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
