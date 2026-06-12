@@ -467,6 +467,7 @@ async function parsePDFFile(file){
   const pdf=await pdfjsLib.getDocument({data:ab}).promise;
   const DAY_MAP={Wed:'Mer',Thu:'Jeu',Fri:'Ven'};
   const result=[];
+
   for(let pn=1;pn<=pdf.numPages;pn++){
     updateLoading(`Page ${pn} / ${pdf.numPages}`,`${result.length} RDV extraits`);
     const page=await pdf.getPage(pn);
@@ -474,7 +475,21 @@ async function parsePDFFile(file){
     const items=tc.items.filter(i=>i.str&&i.str.trim())
       .map(i=>({x:Math.round(i.transform[4]),y:Math.round(i.transform[5]),text:i.str.trim()}));
     items.sort((a,b)=>b.y-a.y||a.x-b.x);
-    const rows=groupByY(items,2);
+    const rows=groupByY(items,3);
+
+    // ── Detect column boundaries from header row (Location | Host | Guest) ──
+    let colLoc=0, colHost=150, colGuest=290; // defaults
+    for(const row of rows){
+      const locH=row.items.find(it=>it.text==='Location');
+      const hostH=row.items.find(it=>it.text==='Host');
+      const guestH=row.items.find(it=>it.text==='Guest(s)');
+      if(locH&&hostH&&guestH){
+        colLoc=locH.x; colHost=hostH.x; colGuest=guestH.x;
+        break;
+      }
+    }
+    const midCol=(colHost+colGuest)/2;
+
     let curDay=null,curTime=null,locBuffer=[],dataRows=[];
     const emit=(r1,r2)=>{
       const hostName=skipInitials(r1.mid),hostCo=r2?r2.mid:'';
@@ -482,13 +497,17 @@ async function parsePDFFile(file){
       const location=formatLocation(locBuffer.join(' '));
       if(hostName&&guestName&&location&&curDay){
         const id=`${curDay}|${curTime}|${location}|${hostName}|${guestName}`;
-        result.push({id,day:curDay,time:curTime,location,
-          host:clean(hostName),hostCompany:clean(hostCo),
-          guest:clean(guestName),guestCompany:clean(guestCo),
-          presence:'unknown',note:''});
+        if(!result.find(r=>r.id===id)){
+          result.push({id,day:curDay,time:curTime,location,
+            host:clean(hostName),hostCompany:clean(hostCo),
+            guest:clean(guestName),guestCompany:clean(guestCo),
+            presence:'unknown',note:''});
+        }
       }
     };
+
     for(const row of rows){
+      // Header: Schedule for Wed/Thu/Fri with time
       const hi=row.items.find(it=>/Schedule\s+for\s+(Wed|Thu|Fri)/i.test(it.text));
       if(hi){
         if(dataRows.length===1)emit(dataRows[0],null);
@@ -496,18 +515,36 @@ async function parsePDFFile(file){
         if(m){curDay=DAY_MAP[m[1]]||m[1];curTime=m[2];}
         locBuffer=[];dataRows=[];continue;
       }
+      // Lounge table header: "International Buyers Lounge … Table N" acts as location
+      const loungeItem=row.items.find(it=>/International\s+Buyers\s+Lounge/i.test(it.text)||
+        (/Business\s+France\s*[-–]\s*Hall/i.test(it.text))||
+        (/Business\s+Plaza\s*[-–]\s*Table\s+\d/i.test(it.text)));
+      if(loungeItem){
+        if(dataRows.length===1)emit(dataRows[0],null);
+        dataRows=[];
+        // Accumulate full location text from this row
+        const locText=row.items.map(it=>it.text).join(' ');
+        locBuffer=[locText];
+        continue;
+      }
       if(row.items.every(it=>isMeta(it.text)))continue;
       if(row.items.some(it=>it.text==='Location')&&row.items.some(it=>it.text==='Host'))continue;
       if(!curDay)continue;
-      const lt=row.items.filter(it=>it.x<150).map(it=>it.text).join(' ').trim();
-      const mt=row.items.filter(it=>it.x>=150&&it.x<290).map(it=>it.text).join(' ').trim();
-      const rt=row.items.filter(it=>it.x>=290).map(it=>it.text).join(' ').trim();
+
+      // Split row into location / host / guest columns using detected boundaries
+      const lt=row.items.filter(it=>it.x<colHost-10).map(it=>it.text).join(' ').trim();
+      const mt=row.items.filter(it=>it.x>=colHost-10&&it.x<colGuest-10).map(it=>it.text).join(' ').trim();
+      const rt=row.items.filter(it=>it.x>=colGuest-10).map(it=>it.text).join(' ').trim();
+
       if(mt&&rt){
         dataRows.push({mid:mt,right:rt});
-        if(lt)locBuffer.push(lt);
+        if(lt&&!isMeta(lt))locBuffer.push(lt);
         if(dataRows.length===2){emit(dataRows[0],dataRows[1]);locBuffer=[];dataRows=[];}
-      }else if(mt&&!rt){if(lt)locBuffer.push(lt);}
-      else{if(lt&&!isMeta(lt))locBuffer.push(lt);}
+      }else if(mt&&!rt){
+        if(lt&&!isMeta(lt))locBuffer.push(lt);
+      }else{
+        if(lt&&!isMeta(lt))locBuffer.push(lt);
+      }
     }
     if(dataRows.length===1)emit(dataRows[0],null);
   }
