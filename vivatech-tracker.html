@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.9.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.10.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -708,18 +708,22 @@ function renderTable(data){
   empty.style.display='none';
   const dc={Mer:'day-wed',Jeu:'day-thu',Ven:'day-fri'};
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+  const TOP_BUYER="International Buyers (Top Buyers' Program)";
+  const starTag=`<span title="International Buyer — Top Buyer's Program" style="display:inline-block;background:#fff8e1;color:#f59e0b;border:1px solid #fcd34d;border-radius:4px;font-size:9px;padding:1px 4px;margin-left:4px;vertical-align:middle;line-height:1.4;white-space:nowrap">⭐ Top Buyer</span>`;
   tbody.innerHTML=data.map(m=>{
     const anyAbsent=m.hostPresence==='absent'||m.guestPresence==='absent';
     const anyPresent=m.hostPresence==='present'||m.guestPresence==='present';
     const pc=anyAbsent?'absent-row':anyPresent?'present-row':'';
     const id=esc(m.id);
+    const hostStar=m.hostType===TOP_BUYER?starTag:'';
+    const guestStar=m.guestType===TOP_BUYER?starTag:'';
     return`<tr class="${pc}">
       <td><span class="day-badge ${dc[m.day]||''}">${dl[m.day]||m.day}</span></td>
       <td class="time-cell">${m.time}</td>
       <td class="location-cell">${esc(m.location)}</td>
-      <td><div class="person-name">${esc(m.host)}</div></td>
+      <td><div class="person-name">${esc(m.host)}${hostStar}</div></td>
       <td><div class="person-company">${esc(m.hostCompany)}</div></td>
-      <td><div class="person-name">${esc(m.guest)}</div></td>
+      <td><div class="person-name">${esc(m.guest)}${guestStar}</div></td>
       <td><div class="person-company">${esc(m.guestCompany)}</div></td>
       <td><div class="presence-toggle">
         <button class="toggle-btn ${m.hostPresence==='present'?'active-present':''}" onclick="togglePresence('${id}','host','present')" title="Hôte présent">✓</button>
