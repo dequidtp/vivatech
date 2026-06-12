@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.6.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.7.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -520,32 +520,33 @@ async function parseXLSXFile(file){
 
   const DAY_MAP={'2026-06-17':'Mer','2026-06-18':'Jeu','2026-06-19':'Ven'};
 
-  // Helper: format Date as local YYYY-MM-DD
-  const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   // Helper: format Date as local HH:MM
   const localTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  // Helper: format Date as local YYYY-MM-DD
+  const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
   const result=[];
   for(const r of rows){
     if((r['Status']||'').toLowerCase()!=='accepted')continue;
 
-    // Parse date
-    let day='?';
-    const rawDate=r['Date'];
-    if(rawDate instanceof Date){
-      day=DAY_MAP[localDate(rawDate)]||'?';
-    }else if(typeof rawDate==='string'&&rawDate){
-      day=DAY_MAP[rawDate.slice(0,10)]||'?';
-    }
-
-    // Parse time — Time column contains a full datetime, use local hours
-    let time='?';
+    // Parse time + day from the Time column (full local datetime — more reliable than Date which is UTC midnight)
+    let time='?', day='?';
     const rawTime=r['Time'];
     if(rawTime instanceof Date){
       time=localTime(rawTime);
+      day=DAY_MAP[localDate(rawTime)]||'?';
     }else if(typeof rawTime==='string'&&rawTime){
       const m=rawTime.match(/(\d{2}:\d{2})/);
       if(m)time=m[1];
+      // Fallback: try Date column
+      const rawDate=r['Date'];
+      if(rawDate instanceof Date){
+        // Add 12h to avoid UTC midnight → previous day issue
+        const d=new Date(rawDate.getTime()+12*3600*1000);
+        day=DAY_MAP[localDate(d)]||'?';
+      }else if(typeof rawDate==='string'){
+        day=DAY_MAP[rawDate.slice(0,10)]||'?';
+      }
     }
 
     const host=clean(r['Host Name']||'');
