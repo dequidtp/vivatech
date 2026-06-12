@@ -605,8 +605,9 @@ function showDiffModal(){
 }
 function closeDiffModal(){document.getElementById('diff-modal').classList.remove('open');pendingImport=null;}
 async function applyImport(){
+  const toSave=pendingImport.parsed;
   closeDiffModal();
-  await saveToBackend(pendingImport.parsed);
+  await saveToBackend(toSave);
 }
 
 // ── APP INIT ───────────────────────────────────────────────
