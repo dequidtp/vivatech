@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.10.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.12.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -201,7 +201,8 @@
       <strong>② Créer la table SQL</strong>
       Dans l'éditeur SQL de Supabase, exécutez :<br><br>
       <code>create table meetings (id text primary key, day text, time text, location text, host text, "hostCompany" text, guest text, "guestCompany" text, "hostPresence" text default 'unknown', "guestPresence" text default 'unknown', note text default '');
--- Migration si table déjà existante :
+create table participants (name text primary key, company text, type text);
+-- Migration si table meetings déjà existante :
 -- alter table meetings add column "hostPresence" text default 'unknown';
 -- alter table meetings add column "guestPresence" text default 'unknown';
 -- update meetings set "hostPresence"=presence, "guestPresence"=presence;
@@ -355,6 +356,29 @@ let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterLocs=new Set(), filterSearch='';
 let currentView='table', personSort='total', personRole='all', personPresFilter='all';
 let topBuyers={}; // key: name.toLowerCase() → {name, company, type}
+
+function saveTopBuyersLocal(){try{localStorage.setItem('vt_topBuyers',JSON.stringify(topBuyers));}catch(e){}}
+function loadTopBuyersLocal(){try{const s=localStorage.getItem('vt_topBuyers');if(s)topBuyers=JSON.parse(s);}catch(e){}}
+
+async function saveTopBuyers(){
+  saveTopBuyersLocal();
+  if(localMode||!sbClient)return;
+  const rows=Object.values(topBuyers).map(b=>({name:b.name,company:b.company,type:b.type}));
+  if(!rows.length)return;
+  // Upsert in one batch (65 rows max — small)
+  await sbClient.from('participants').upsert(rows,{onConflict:'name'});
+}
+
+async function loadTopBuyers(){
+  loadTopBuyersLocal();
+  if(localMode||!sbClient)return;
+  try{
+    const{data,error}=await sbClient.from('participants').select('*');
+    if(error||!data||!data.length)return;
+    data.forEach(r=>{topBuyers[r.name.toLowerCase().trim()]={name:r.name,company:r.company||'',type:r.type||''};});
+    saveTopBuyersLocal(); // keep local in sync
+  }catch(e){console.warn('loadTopBuyers error',e);}
+}
 let allLocs=[];
 const SB_URL='https://efmbsdytlzqybxyenmwq.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbWJzZHl0bHpxeWJ4eWVubXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODUxNDksImV4cCI6MjA5Njc2MTE0OX0.lk-kK2gldd4VRmYxrDO9TBcshjp4Zo5gXqHlka-2UXM';
@@ -419,6 +443,7 @@ async function loadFromSupabase(){
       document.getElementById('export-btn').style.display='flex';
       document.getElementById('sync-status').style.display='flex';
       setSyncStatus('ok','Connecté');
+      await loadTopBuyers();
     }else{
       meetings=data.map(r=>({
         id:r.id, day:r.day, time:r.time, location:r.location,
@@ -429,6 +454,7 @@ async function loadFromSupabase(){
         guestPresence:r.guestPresence||r.presence||'unknown',
         note:r.note||''
       }));
+      await loadTopBuyers();
       hideLoading();
       document.getElementById('setup-zone').style.display='none';
       document.getElementById('reimport-btn').style.display='flex';
@@ -573,6 +599,7 @@ async function parseXLSXFile(file){
     }
   }
   updateLoading(`${result.length} RDV acceptés — ${Object.keys(topBuyers).length} acheteurs Top Buyers`,'');
+  saveTopBuyers();
   hideLoading();
   return result;
 }
@@ -1065,6 +1092,7 @@ async function autoConnect(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
+  loadTopBuyersLocal(); // fast local cache while Supabase connects
   autoConnect();
 });
 </script>
