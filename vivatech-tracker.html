@@ -176,7 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
-    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.8.0</span>
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.9.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -354,6 +354,7 @@ let meetings=[], pendingImport=null;
 let sortCol='time', sortDir=1;
 let filterDay='all', filterPresence='all', filterTime='', filterLocs=new Set(), filterSearch='';
 let currentView='table', personSort='total', personRole='all', personPresFilter='all';
+let topBuyers={}; // key: name.toLowerCase() → {name, company, type}
 let allLocs=[];
 const SB_URL='https://efmbsdytlzqybxyenmwq.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbWJzZHl0bHpxeWJ4eWVubXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODUxNDksImV4cCI6MjA5Njc2MTE0OX0.lk-kK2gldd4VRmYxrDO9TBcshjp4Zo5gXqHlka-2UXM';
@@ -507,7 +508,21 @@ async function parseXLSXFile(file){
   const ab=await file.arrayBuffer();
   const wb=XLSX.read(ab,{type:'array',cellDates:true});
 
-  // Find the Meetings sheet
+  // ── Parse Participants sheet → build Top Buyers registry ──
+  const TOP_BUYER="International Buyers (Top Buyers' Program)";
+  topBuyers={};
+  const partSheet=wb.SheetNames.find(n=>/participant/i.test(n)&&!/meeting/i.test(n));
+  if(partSheet){
+    const partRows=XLSX.utils.sheet_to_json(wb.Sheets[partSheet],{defval:''});
+    for(const r of partRows){
+      if(r['Participant Type']!==TOP_BUYER)continue;
+      const name=clean(`${r['First Name']} ${r['Last Name']}`);
+      const company=clean(r['Organization Name']||'');
+      if(name.trim())topBuyers[name.toLowerCase().trim()]={name,company,type:TOP_BUYER};
+    }
+  }
+
+  // ── Parse Meetings sheet ──
   const sheetName=wb.SheetNames.find(n=>/meeting/i.test(n)&&!/member/i.test(n));
   if(!sheetName){hideLoading();throw new Error('Onglet "Meetings" introuvable dans le fichier.');}
 
@@ -515,17 +530,13 @@ async function parseXLSXFile(file){
   const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
 
   const DAY_MAP={'2026-06-17':'Mer','2026-06-18':'Jeu','2026-06-19':'Ven'};
-
-  // Helper: format Date as local HH:MM
   const localTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  // Helper: format Date as local YYYY-MM-DD
   const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
   const result=[];
   for(const r of rows){
     if((r['Status']||'').toLowerCase()!=='accepted')continue;
 
-    // Parse time + day from the Time column (full local datetime — more reliable than Date which is UTC midnight)
     let time='?', day='?';
     const rawTime=r['Time'];
     if(rawTime instanceof Date){
@@ -534,10 +545,8 @@ async function parseXLSXFile(file){
     }else if(typeof rawTime==='string'&&rawTime){
       const m=rawTime.match(/(\d{2}:\d{2})/);
       if(m)time=m[1];
-      // Fallback: try Date column
       const rawDate=r['Date'];
       if(rawDate instanceof Date){
-        // Add 12h to avoid UTC midnight → previous day issue
         const d=new Date(rawDate.getTime()+12*3600*1000);
         day=DAY_MAP[localDate(d)]||'?';
       }else if(typeof rawDate==='string'){
@@ -563,7 +572,7 @@ async function parseXLSXFile(file){
         hostPresence:'unknown',guestPresence:'unknown',note:''});
     }
   }
-  updateLoading(`${result.length} RDV acceptés trouvés`,'');
+  updateLoading(`${result.length} RDV acceptés — ${Object.keys(topBuyers).length} acheteurs Top Buyers`,'');
   hideLoading();
   return result;
 }
@@ -744,27 +753,50 @@ function buildPersonMap(){
 
 function renderPersons(){
   const map=buildPersonMap();
-  const query=(document.getElementById('person-search').value||'').toLowerCase();
-  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
   const TOP_BUYER="International Buyers (Top Buyers' Program)";
 
-  let persons=Object.values(map).filter(p=>p.type===TOP_BUYER);
-  if(query)persons=persons.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
+  // Start from registry (all Top Buyers from Participants sheet)
+  // then enrich with meeting data
+  const persons={};
+
+  // 1. Seed from topBuyers registry (includes those with 0 meetings)
+  Object.values(topBuyers).forEach(b=>{
+    const key=b.name.toLowerCase().trim();
+    persons[key]={name:b.name,company:b.company,type:TOP_BUYER,meetings:[]};
+  });
+
+  // 2. Enrich/overwrite from meeting-derived map (has actual meeting data)
+  Object.values(map).filter(p=>p.type===TOP_BUYER).forEach(p=>{
+    const key=p.name.toLowerCase().trim();
+    persons[key]={...p}; // full data including meetings
+  });
+
+  // If no topBuyers registry loaded, fall back to meeting-derived only
+  if(!Object.keys(topBuyers).length){
+    Object.values(map).filter(p=>p.type===TOP_BUYER).forEach(p=>{
+      persons[p.name.toLowerCase().trim()]=p;
+    });
+  }
+
+  const query=(document.getElementById('person-search').value||'').toLowerCase();
+  const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
+  let personsList=Object.values(persons);
+  if(query)personsList=personsList.filter(p=>p.name.toLowerCase().includes(query)||p.company.toLowerCase().includes(query));
 
   const personMeetPres=(m)=>m.asRole==='host'?m.hostPresence:m.guestPresence;
 
-  if(personPresFilter==='present')persons=persons.filter(p=>p.meetings.some(m=>personMeetPres(m)==='present'));
-  if(personPresFilter==='absent')persons=persons.filter(p=>p.meetings.some(m=>personMeetPres(m)==='absent'));
-  if(personPresFilter==='unknown')persons=persons.filter(p=>p.meetings.every(m=>personMeetPres(m)==='unknown'));
+  if(personPresFilter==='present')personsList=personsList.filter(p=>p.meetings.some(m=>personMeetPres(m)==='present'));
+  if(personPresFilter==='absent')personsList=personsList.filter(p=>p.meetings.some(m=>personMeetPres(m)==='absent'));
+  if(personPresFilter==='unknown')personsList=personsList.filter(p=>p.meetings.every(m=>personMeetPres(m)==='unknown'));
 
-  if(personSort==='name')persons.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(personSort==='total')persons.sort((a,b)=>b.meetings.length-a.meetings.length);
-  else if(personSort==='present')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='present').length-a.meetings.filter(m=>personMeetPres(m)==='present').length);
-  else if(personSort==='absent')persons.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='absent').length-a.meetings.filter(m=>personMeetPres(m)==='absent').length);
+  if(personSort==='name')personsList.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(personSort==='total')personsList.sort((a,b)=>b.meetings.length-a.meetings.length);
+  else if(personSort==='present')personsList.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='present').length-a.meetings.filter(m=>personMeetPres(m)==='present').length);
+  else if(personSort==='absent')personsList.sort((a,b)=>b.meetings.filter(m=>personMeetPres(m)==='absent').length-a.meetings.filter(m=>personMeetPres(m)==='absent').length);
 
-  document.getElementById('person-count').textContent=`${persons.length} acheteur${persons.length>1?'s':''}`;
+  document.getElementById('person-count').textContent=`${personsList.length} acheteur${personsList.length>1?'s':''}`;
 
-  document.getElementById('persons-grid').innerHTML=persons.map(p=>{
+  document.getElementById('persons-grid').innerHTML=personsList.map(p=>{
     const tot=p.meetings.length;
     const pres=p.meetings.filter(m=>personMeetPres(m)==='present').length;
     const abs=p.meetings.filter(m=>personMeetPres(m)==='absent').length;
@@ -788,7 +820,7 @@ function renderPersons(){
           <button class="toggle-btn ${myPres==='absent'?'active-absent':''}" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();togglePresence('${mid}','${myRole}','absent')" title="Absent">✗</button>
         </div>
       </div>`;
-    }).join('');
+    }).join('')||(tot===0?'<div class="pmeet" style="color:var(--text-soft);font-size:11px;justify-content:center">Aucun RDV accepté</div>':'');
 
     return`<div class="person-card" id="pc-${nameKey}" onclick="toggleCard('pc-${nameKey}')">
       <div class="person-card-header">
@@ -816,12 +848,17 @@ function exportPersonsExcel(){
   const dl={Mer:'Mer 17/06',Jeu:'Jeu 18/06',Ven:'Ven 19/06'};
   const pl={present:'✓ Présent',absent:'✗ Absent',unknown:'?'};
   const wb=XLSX.utils.book_new();
-
-  // Sheet 1: summary per buyer
-  const summary=[['Acheteur','Organisation','Total RDV','Présents','Absents','Non renseigné']];
-  const buyers=Object.values(map).filter(p=>p.type===TOP_BUYER)
-    .sort((a,b)=>a.name.localeCompare(b.name));
   const personMeetPres=(m)=>m.asRole==='host'?m.hostPresence:m.guestPresence;
+
+  // Build merged list (same logic as renderPersons)
+  const persons={};
+  Object.values(topBuyers).forEach(b=>{const k=b.name.toLowerCase().trim();persons[k]={name:b.name,company:b.company,type:TOP_BUYER,meetings:[]};});
+  Object.values(map).filter(p=>p.type===TOP_BUYER).forEach(p=>{persons[p.name.toLowerCase().trim()]=p;});
+  if(!Object.keys(topBuyers).length)Object.values(map).filter(p=>p.type===TOP_BUYER).forEach(p=>{persons[p.name.toLowerCase().trim()]=p;});
+  const buyers=Object.values(persons).sort((a,b)=>a.name.localeCompare(b.name));
+
+  // Sheet 1: summary
+  const summary=[['Acheteur','Organisation','Total RDV','Présents','Absents','Non renseigné']];
   buyers.forEach(p=>{
     const tot=p.meetings.length;
     const pres=p.meetings.filter(m=>personMeetPres(m)==='present').length;
@@ -832,11 +869,11 @@ function exportPersonsExcel(){
   ws1['!cols']=[28,28,10,10,10,14].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws1,'Résumé acheteurs');
 
-  // Sheet 2: all RDVs per buyer with presence
+  // Sheet 2: all RDVs
   const detail=[['Acheteur','Organisation','Jour','Heure','Lieu','Interlocuteur','Entreprise interlocuteur','Présence acheteur']];
   buyers.forEach(p=>{
-    const sorted=[...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
-    sorted.forEach(m=>{
+    if(!p.meetings.length){detail.push([p.name,p.company,'—','—','Aucun RDV accepté','','','']);return;}
+    [...p.meetings].sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1).forEach(m=>{
       const myPres=personMeetPres(m);
       const counterName=m.asRole==='host'?m.guest:m.host;
       const counterCo=m.asRole==='host'?m.guestCompany:m.hostCompany;
@@ -847,16 +884,16 @@ function exportPersonsExcel(){
   ws2['!cols']=[28,28,12,8,35,28,28,16].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws2,'Détail RDV');
 
-  // Sheet 3: absents only
+  // Sheet 3: absences only
   const absents=[['Acheteur','Organisation','Jour','Heure','Lieu','Interlocuteur','Entreprise interlocuteur']];
   buyers.forEach(p=>{
-    const sorted=[...p.meetings].filter(m=>personMeetPres(m)==='absent')
-      .sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1);
-    sorted.forEach(m=>{
-      const counterName=m.asRole==='host'?m.guest:m.host;
-      const counterCo=m.asRole==='host'?m.guestCompany:m.hostCompany;
-      absents.push([p.name,p.company,dl[m.day]||m.day,m.time,m.location,counterName,counterCo]);
-    });
+    p.meetings.filter(m=>personMeetPres(m)==='absent')
+      .sort((a,b)=>(a.day+a.time)<(b.day+b.time)?-1:1)
+      .forEach(m=>{
+        absents.push([p.name,p.company,dl[m.day]||m.day,m.time,m.location,
+          m.asRole==='host'?m.guest:m.host,
+          m.asRole==='host'?m.guestCompany:m.hostCompany]);
+      });
   });
   const ws3=XLSX.utils.aoa_to_sheet(absents);
   ws3['!cols']=[28,28,12,8,35,28,28].map(w=>({wch:w}));
