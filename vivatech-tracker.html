@@ -176,6 +176,7 @@
     <h1>Vivatech 2026 — Suivi RDV <span>Business France</span></h1>
   </div>
   <div class="header-actions">
+    <span style="font-size:10px;opacity:.4;font-family:monospace;letter-spacing:.03em">v1.3.0</span>
     <span id="sync-status" style="font-size:11px;opacity:.8;display:none">
       <span class="sync-dot" id="sync-dot"></span><span id="sync-text">Synchronisé</span>
     </span>
@@ -552,45 +553,57 @@ async function parseXLSXFile(file){
 }
 
 async function saveToBackend(data){
-  if(localMode){
-    meetings=data;initApp();return;
-  }
+  if(localMode){meetings=data;initApp();return;}
   showLoading('Sauvegarde dans Supabase…',`${data.length} RDV`);
   try{
-    // Upsert all — preserving existing presence/note
     const existingMap={};
     meetings.forEach(m=>existingMap[m.id]=m);
     const toUpsert=data.map(m=>{
       const ex=existingMap[m.id];
-      return{
-        id:m.id, day:m.day, time:m.time, location:m.location,
-        host:m.host, hostCompany:m.hostCompany,
-        guest:m.guest, guestCompany:m.guestCompany,
-        presence:ex?ex.presence:'unknown',
-        note:ex?ex.note:''
-      };
+      return{id:m.id,day:m.day,time:m.time,location:m.location,
+        host:m.host,hostCompany:m.hostCompany,
+        guest:m.guest,guestCompany:m.guestCompany,
+        presence:ex?ex.presence:'unknown',note:ex?ex.note:''};
     });
-    // Delete removed meetings
+
+    // Delete removed meetings — in batches of 100 to avoid URL length limits
     const newIds=new Set(data.map(m=>m.id));
     const toDelete=meetings.filter(m=>!newIds.has(m.id)).map(m=>m.id);
-    if(toDelete.length>0){
-      await sbClient.from('meetings').delete().in('id',toDelete);
+    console.log(`[import] deleting ${toDelete.length}, upserting ${toUpsert.length}`);
+    for(let i=0;i<toDelete.length;i+=100){
+      const batch=toDelete.slice(i,i+100);
+      updateLoading('Suppression anciens RDV…',`${Math.min(i+100,toDelete.length)} / ${toDelete.length}`);
+      const{error}=await sbClient.from('meetings').delete().in('id',batch);
+      if(error){console.error('delete error',error);throw new Error('Suppression échouée : '+error.message);}
     }
-    // Upsert in batches of 500
-    for(let i=0;i<toUpsert.length;i+=500){
-      const batch=toUpsert.slice(i,i+500);
-      updateLoading(`Sauvegarde…`,`${i+batch.length} / ${toUpsert.length}`);
-      const{error}=await sbClient.from('meetings').upsert(batch);
-      if(error)throw error;
+
+    // Upsert in batches of 200
+    for(let i=0;i<toUpsert.length;i+=200){
+      const batch=toUpsert.slice(i,i+200);
+      updateLoading('Sauvegarde nouveaux RDV…',`${Math.min(i+200,toUpsert.length)} / ${toUpsert.length}`);
+      const{error}=await sbClient.from('meetings').upsert(batch,{onConflict:'id'});
+      if(error){console.error('upsert error',error);throw new Error('Upsert échoué : '+error.message);}
     }
-    meetings=toUpsert;
+
+    // Reload from Supabase to confirm what's actually in DB
+    updateLoading('Vérification…','Rechargement depuis la base');
+    const{data:fresh,error:loadErr}=await sbClient.from('meetings').select('*');
+    if(loadErr)throw new Error('Rechargement échoué : '+loadErr.message);
+    meetings=fresh.map(r=>({
+      id:r.id,day:r.day,time:r.time,location:r.location,
+      host:r.host,hostCompany:r.hostCompany||'',
+      guest:r.guest,guestCompany:r.guestCompany||'',
+      presence:r.presence||'unknown',note:r.note||''
+    }));
+    console.log(`[import] done — ${meetings.length} meetings in DB`);
     hideLoading();
-    setSyncStatus('ok','Synchronisé');
+    setSyncStatus('ok',`Synchronisé — ${meetings.length} RDV`);
     initApp();
   }catch(e){
     hideLoading();
     setSyncStatus('error','Erreur sync');
-    alert('Erreur de sauvegarde : '+e.message);
+    console.error('[saveToBackend]',e);
+    alert('Erreur de sauvegarde :\n'+e.message);
   }
 }
 
